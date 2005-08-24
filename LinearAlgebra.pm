@@ -20,7 +20,7 @@ use constant{
 
 use strict;
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 @PDL::LinearAlgebra::ISA = qw/PDL::Exporter/;
 @PDL::LinearAlgebra::EXPORT_OK = qw/t diag issym minv mtriinv msyminv mposinv mdet mposdet mrcond positivise
@@ -773,7 +773,7 @@ from Lapack.
 
 =for usage
 
- PDL = mrank(PDL, SCALAR(TOL))
+ SCALAR = mrank(PDL, SCALAR(TOL))
  TOL:	tolerance value, default : mnorm(dims(PDL),'inf') * mnorm(PDL) * EPS
 
 =for example
@@ -812,6 +812,7 @@ sub PDL::mrank {
 =for ref
 
 Compute norm of real or complex matrix
+Supports threading.
 
 =for usage
 
@@ -829,7 +830,11 @@ Compute norm of real or complex matrix
 
 =cut
 
-*mnorm = \&PDL::mnorm;
+sub mnorm{
+	my $m =shift;
+	$m->mnorm(@_);
+}
+
 
 sub PDL::mnorm {
 	my ($m, $ord) = @_;
@@ -849,24 +854,74 @@ sub PDL::mnorm {
 	}
 
 	if ($ord == 0){
-		return ($m->getndims == 3) ? bless $m->clange(1),'PDL' : $m->lange(1);
+		$m->lange(1);
 	}
 	elsif($ord == 1){
-		return ($m->getndims == 3) ? bless $m->clange(2),'PDL' : $m->lange(2);
+		$m->lange(2);
 	}
 	elsif($ord == 3){
-		return ($m->getndims == 3) ? bless  $m->clange(3),'PDL' : $m->lange(3);
+		$m->lange(3);
+	}
+	else{
+		my ($sv, $info, $err);
+		$err = setlaerror(NO);
+		($sv, $info) = $m->msvd(0, 0);
+		setlaerror($err);
+		if($info->max > 0 && $_laerror) {
+			my ($index,@list);
+			$index = which($info > 0)+1;
+			@list = $index->list;
+			laerror("mnorm: SVD algorithm did not converge for matrix (PDL(s) @list): \$info = $info");
+		}
+		$sv->slice('(0)')->reshape(-1)->sever;
+	}
+	
+}
+
+
+sub PDL::mnorm {
+	my ($m, $ord) = @_;
+	$ord = 2 unless (defined $ord);
+
+	if ($ord eq 'inf'){
+		$ord = 0;
+	}
+	elsif ($ord eq 'one'){
+		$ord = 1;	
+	}
+	elsif($ord eq 'two'){
+		$ord = 2;
+	}
+	elsif($ord eq 'fro'){
+		$ord = 3;
+	}
+
+	if ($ord == 0){
+		return bless $m->clange(1),'PDL';
+	}
+	elsif($ord == 1){
+		return bless $m->clange(2),'PDL';
+	}
+	elsif($ord == 3){
+		return bless  $m->clange(3),'PDL';
 	}
 	else{
 		my ($sv, $info, $err) ;
 		$err = setlaerror(NO);
 		($sv, $info) = $m->msvd(0, 0);
 		setlaerror($err);
-		barf("mnorm: SVD algorithm did not converge\n") if $info;
-		$sv->slice('(0)')->sever;
+		if($info->max > 0 && $_laerror) {
+			my ($index,@list);
+			$index = which($info > 0)+1;
+			@list = $index->list;
+			laerror("mnorm: SVD algorithm did not converge for matrix (PDL(s) @list): \$info = $info");
+		}
+		$sv->slice('(0)')->reshape(-1)->sever;
 	}
 	
 }
+
+
 
 =head2 mdet
 
@@ -1013,7 +1068,7 @@ sub PDL::Complex::mposdet {
 
 =for ref
 
-Compute the condition number (two-norm) of a matrix. 
+Compute the condition number (two-norm) of a general matrix. 
 
 The condition number (two-norm) is defined:
 
@@ -1090,6 +1145,102 @@ sub PDL::Complex::mcond {
 	$info .= posinf unless $info->isempty;
 	return $ret;
 }
+
+
+
+=head2 mrcond
+
+=for ref
+
+Estimate the reciprocal of condition number of a
+general square matrix using LU factorization
+in either the 1-norm or the infinity-norm.
+
+The reciprocal condition number is defined:
+
+	1/(norm (a) * norm (inv (a)))
+
+Supports threading.
+
+=for usage
+
+ PDL = mrcond(PDL, SCALAR(ord))
+ ord : 
+ 	0 : Infinity norm (default)
+ 	1 : One norm
+
+=for example
+
+ my $a = random(10,10);
+ my $rcond = mrcond($a,1);
+
+=cut
+
+sub mrcond{
+	my $m =shift;
+	$m->mcond(@_);
+}
+
+sub PDL::mrcond {
+	my ($m,$anorm) = @_;
+	$anorm = 0 unless defined $anorm;
+	my @dims = $m->dims;
+
+	barf("mrcond: Require square array")
+		unless ( $dims[0] == $dims[1] );
+
+	my ($ipiv, $info,$rcond,$norm);
+	$norm = $m->mnorm($anorm);
+	$m = $m->xchg(0,1)->copy();
+	$ipiv = PDL->null;
+	$info = PDL->null;
+	$rcond = PDL->null;
+
+	$m->getrf($ipiv, $info);
+	if($info->max > 0 && $_laerror) {
+		my ($index,@list);
+		$index = which($info > 0)+1;
+		@list = $index->list;
+		laerror("mrcond: Factor(s) U (PDL(s) @list) is/are singular(s) (after getrf factorization): \$info = $info");
+	}
+	else{
+		$m->gecon($anorm,$norm,$rcond,$info);
+	}
+	return wantarray ? ($rcond, $info) : $rcond;
+
+	
+}
+
+sub PDL::Complex::mrcond {
+	my ($m, $anorm) = @_;
+	$anorm = 0 unless defined $anorm;
+	my @dims = $m->dims;
+
+	barf("mrcond: Require square array(s)")
+		unless ( $dims[1] == $dims[2] );
+
+	my ($ipiv, $info,$rcond,$norm);
+	$norm = $m->mnorm($anorm);
+	$m = $m->xchg(1,2)->copy();
+	$ipiv = PDL->null;
+	$info = PDL->null;
+	$rcond = PDL->null;
+	
+	$m->cgetrf($ipiv, $info);
+	if($info->max > 0 && $_laerror) {
+		my ($index,@list);
+		$index = which($info > 0)+1;
+		@list = $index->list;
+		laerror("mrcond: Factor(s) U (PDL(s) @list) is/are singular(s) (after cgetrf factorization) : \$info = $info");
+	}
+	else{
+		$m->cgecon($anorm,$norm,$rcond,$info);
+	}
+	return wantarray ? ($rcond, $info) : $rcond;
+
+}
+
+
 
 
 
@@ -1214,9 +1365,8 @@ sub PDL::minv {
 		if( $dims[0] != $dims[1] );
 
 	$m = $m->copy() unless $m->is_inplace(0);
-	$ipiv = zeroes(long, @dims[1..$#dims]);
-	@dims = @dims[2..$#dims];
-	$info = @dims ? zeroes(long,@dims) : pdl(long,0);
+	$ipiv = PDL->null;
+	$info = PDL->null;
 
 	$m->getrf($ipiv, $info);
 	if($info->max > 0 && $_laerror) {
@@ -1237,16 +1387,15 @@ sub PDL::Complex::minv {
 		if( $dims[1] != $dims[2] );
 
 	$m = $m->copy() unless $m->is_inplace(0);
-	$ipiv = zeroes(long, @dims[2..$#dims]);
-	@dims = @dims[3..$#dims];
-	$info = @dims ? zeroes(long,@dims) : pdl(long,0);
+	$ipiv = PDL->null;
+	$info = PDL->null;
 
 	$m->cgetrf($ipiv, $info);
 	if($info->max > 0 && $_laerror) {
 		my ($index,@list);
 		$index = which($info > 0)+1;
 		@list = $index->list;
-		laerror("minv: Factor(s) U (PDL(s) @list) is/are singular(s) (after getrf factorization) : \$info = $info");
+		laerror("minv: Factor(s) U (PDL(s) @list) is/are singular(s) (after cgetrf factorization) : \$info = $info");
 	}
 	else{
 		$m->cgetri($ipiv,$info);
@@ -1293,8 +1442,7 @@ sub PDL::mtriinv{
 		if( $dims[0] != $dims[1] );
 
 	$m = $m->copy() unless $m->is_inplace(0);
-	@dims = @dims[2..$#dims];
-	my $info = @dims ? zeroes(long,@dims) : pdl(long,0);
+	my $info = PDL->null;
 	$m->trtri($upper, $diag, $info);
 	if($info->max > 0 && $_laerror) {
 		my ($index,@list);
@@ -1316,8 +1464,7 @@ sub PDL::Complex::mtriinv{
 		if( $dims[1] != $dims[2] );
 
 	$m = $m->copy() unless $m->is_inplace(0);
-	@dims = @dims[3..$#dims];
-	my $info = @dims ? zeroes(long,@dims) : pdl(long,0);
+	my $info = PDL->null;
 	$m->ctrtri($upper, $diag, $info);
 	if($info->max > 0 && $_laerror) {
 		my ($index,@list);
@@ -3828,7 +3975,7 @@ from Lapack and returns C<Q> in scalar context.
 
 =for usage
 
- (PDL(Q), PDL(R), PDL(info)) = mql(PDL, SCALAR)
+ (PDL(Q), PDL(L), PDL(info)) = mql(PDL, SCALAR)
  SCALAR : ECONOMIC = 0 | FULL = 1, default = 0
 
 =for example
@@ -4088,7 +4235,7 @@ Uses L<gesv|PDL::LinearAlgebra::Real/gesv> or L<cgesv|PDL::LinearAlgebra::Comple
 
 =for usage
 
- (PDL(X), (PDL(L), PDL(U), PDL(info))) = msolve(PDL(A), PDL(B) )
+ (PDL(X), (PDL(LU), PDL(pivot), PDL(info))) = msolve(PDL(A), PDL(B) )
 
 =for example
 

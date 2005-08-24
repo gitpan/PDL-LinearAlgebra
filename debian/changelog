@@ -1,5 +1,11 @@
+pdl-linearalgebra (0.02-1) unstable; urgency=low
+
+  * new upustram release.
+
+ -- Gregory Vanuxem <vanuxemg@yahoo.fr>  Wed, 24 Aug 2005 13:43:34 -0700
+
 pdl-linearalgebra (0.01-1) unstable; urgency=low
 
   * Initial release.
 
- -- Gregory Vanuxem <g.vanuxem@wanadoo.fr>  Mon, 15 Aug 2005 17:44:34 -0700
+ -- Gregory Vanuxem <vanuxemg@yahoo.fr>  Mon, 15 Aug 2005 17:44:34 -0700

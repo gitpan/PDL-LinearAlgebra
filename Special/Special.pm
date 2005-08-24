@@ -29,7 +29,7 @@ PDL::LinearAlgebra::Special - Special matrix for PDL
 
 =head1 DESCRIPTION
 
-This module provides some known matrix.
+This module provides some constructors of well known matrix.
 
 =head1 FUNCTIONS
 
@@ -76,7 +76,7 @@ Uses L<tricpy|PDL::LinearAlgebra::Real/tricpy> or L<tricpy|PDL::LinearAlgebra::C
 
 =for usage
 
- PDL = mtri(SCALAR)
+ PDL = mtri(PDL, SCALAR)
  SCALAR : UPPER = 0 | LOWER = 1, default = 0
 
 =for example

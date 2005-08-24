@@ -1,5 +1,13 @@
 Revision history for Perl extension PDL::LinearAlgebra
 
+0.02  Wed Aug 24 13:39:15 2005
+
+  * mnorm threading
+  * new routine mrcond
+  * documentation corrections
+  * add PDL.pm in prerequities (Makefile.PL)
+  
 0.01  Mon Aug 15 14:57:24 2005
 
   * Initial release
+
