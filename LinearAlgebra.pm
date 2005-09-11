@@ -20,7 +20,7 @@ use constant{
 
 use strict;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 @PDL::LinearAlgebra::ISA = qw/PDL::Exporter/;
 @PDL::LinearAlgebra::EXPORT_OK = qw/t diag issym minv mtriinv msyminv mposinv mdet mposdet mrcond positivise
@@ -1152,7 +1152,7 @@ sub PDL::Complex::mcond {
 
 =for ref
 
-Estimate the reciprocal of condition number of a
+Estimate the reciprocal condition number of a
 general square matrix using LU factorization
 in either the 1-norm or the infinity-norm.
 
@@ -1953,9 +1953,9 @@ from Lapack and returns schur(T) in scalar context.
  Returned values     :
 		       Schur form T (SCALAR CONTEXT),
 		       eigenvalues,
-		       Schur vectors (Z) if required,
-		       left eigenvectors if required
-		       right eigenvectors if required
+		       Schur vectors (Z) if requested,
+		       left eigenvectors if requested
+		       right eigenvectors if requested
 		       sdim: Number of eigenvalues selected if select_func is defined.
 		       info: Info output from gees/cgees.	    	
 
@@ -2349,13 +2349,13 @@ from Lapack and returns schur(T) in scalar context.
  right eigenvector   : Right eigenvectors returned, none = 0 | all = 1 | selected = 2, default = 0
  select_func         : Select_func is used to select eigenvalues to sort
 		       to the top left of the Schur form.
-		       An eigenvalue if PerlInt select_func(PDL::Complex(w)) is true;
+		       An eigenvalue is selected if PerlInt select_func(PDL::Complex(w)) is true;
 		       Note that a selected complex eigenvalue may no longer
 		       satisfy select_func(PDL::Complex(w)) = 1 after ordering, since
 		       ordering may change the value of complex eigenvalues
 		       (especially if the eigenvalue is ill-conditioned).
 		       All  eigenvalues/vectors are selected if select_func is undefined. 
- sense		     : Determines which condition number will be computed.
+ sense		     : Determines which reciprocal condition numbers will be computed.
 			0: None are computed
 			1: Computed for average of selected eigenvalues only
 			2: Computed for selected right invariant subspace only
@@ -2369,15 +2369,15 @@ from Lapack and returns schur(T) in scalar context.
  Returned values     :
 		       Schur form T (SCALAR CONTEXT),
 		       eigenvalues,
-		       Schur vectors if required,
-		       HASH{VL}: left eigenvectors if required
-		       HASH{VR}: right eigenvectors if required
+		       Schur vectors if requested,
+		       HASH{VL}: left eigenvectors if requested
+		       HASH{VR}: right eigenvectors if requested
 		       HASH{info}: info output from gees/cgees.
 		       if select_func is defined:
 			HASH{n}: number of eigenvalues selected,
-			HASH{rconde}: condition number for the average of 
+			HASH{rconde}: reciprocal condition numbers for the average of 
 			the selected eigenvalues if requested,
-			HASH{rcondv}: condition number for the selected 
+			HASH{rcondv}: reciprocal condition numbers for the selected 
 			right invariant subspace if requested.
 
 =for example
@@ -2776,12 +2776,11 @@ from Lapack.
 		       alpha,
 		       beta (eigenvalues = alpha/beta),
 		       HASH{info}: info output from gges/cgges.
-		       HASH{SL}: left Schur vectors if required
-		       HASH{SR}: right Schur vectors if required
-		       HASH{VL}: left eigenvectors if required
-		       HASH{VR}: right eigenvectors if required
+		       HASH{SL}: left Schur vectors if requested
+		       HASH{SR}: right Schur vectors if requested
+		       HASH{VL}: left eigenvectors if requested
+		       HASH{VR}: right eigenvectors if requested
 		       HASH{n} : Number of eigenvalues selected if select_func is defined.
-		       info: Info output from gees/cgees.	    	
 
 =for example
 
@@ -3287,7 +3286,7 @@ from Lapack.
 		       ordering may change the value of complex eigenvalues
 		       (especially if the eigenvalue is ill-conditioned).
 		       All eigenvalues/vectors are selected if select_func is undefined. 
- sense		     : Determines which condition number will be computed.
+ sense		     : Determines which reciprocal condition numbers will be computed.
 			0: None are computed
 			1: Computed for average of selected eigenvalues only
 			2: Computed for selected deflating subspaces only
@@ -3305,23 +3304,26 @@ from Lapack.
 		       alpha,
 		       beta (eigenvalues = alpha/beta),
 		       HASH{info}: info output from gges/cgges.
-		       HASH{SL}: left Schur vectors if required
-		       HASH{SR}: right Schur vectors if required
-		       HASH{VL}: left eigenvectors if required
-		       HASH{VR}: right eigenvectors if required
+		       HASH{SL}: left Schur vectors if requested
+		       HASH{SR}: right Schur vectors if requested
+		       HASH{VL}: left eigenvectors if requested
+		       HASH{VR}: right eigenvectors if requested
+		       HASH{rconde}: reciprocal condition numbers for average of selected eigenvalues if requested
+		       HASH{rcondv}: reciprocal condition numbers for selected deflating subspaces if requested
 		       HASH{n} : Number of eigenvalues selected if select_func is defined.
-		       info: Info output from gees/cgees.	    	
 
 =for example
 
  my $a = random(10,10);
- my $schur  = mschur($a);
+ my $b = random(10,10);
+ my ($S,$T) = mgschurx($a,$b);
  sub select{
- 	my $m = shift;
-	# select "discrete time" eigenspace
- 	return $m->Cabs < 1 ? 1 : 0;
+ 	my ($alpha,$beta) = @_;
+ 	return $alpha->Cabs < abs($beta) ? 1 : 0;
  }
- my ($schur, $eigen, $vectors)  = mschur($a,1,0,1,\&select); 
+ my ($S, $T, $alpha, $beta, %res)  = mgschurx( $a, $b, 1, 1, 1, 1,\&select,3); 
+
+
 
 =cut
 
@@ -5512,12 +5514,12 @@ L<cgeevx|PDL::LinearAlgebra::Complex/cgeevx> from Lapack.
 
  (PDL(value), (PDL(lv),  (PDL(rv)), HASH(result)), HASH(result)) = meigenx(PDL, HASH(options))
  where options are:
- vector:    eigenvectors to compute
+ vector:     eigenvectors to compute
 		'left':  computes left eigenvectors
 		'right': computes right eigenvectors
 		'all':   computes left and right eigenvectors
 		 0:     doesn't compute (default)
- rcondition: reciprocal condition numbers to compute (returned in HASH{'rconde'} and HASH{'rcondv'})
+ rcondition: reciprocal condition numbers to compute (returned in HASH{'rconde'} for eigenvalues and HASH{'rcondv'} for eigenvectors)
 		'value':  computes reciprocal condition numbers for eigenvalues
 		'vector': computes reciprocal condition numbers for eigenvectors
 		'all':    computes reciprocal condition numbers for eigenvalues and eigenvectors
@@ -5535,13 +5537,13 @@ L<cgeevx|PDL::LinearAlgebra::Complex/cgeevx> from Lapack.
 	     (permute details returned in HASH{'balance'})
  		1: permutes
  		0: Doesn't permute (default)
- schur:       specifie whether or not it returns the Schur form (returned in HASH{'schur'})
+ schur:      specifie whether or not it returns the Schur form (returned in HASH{'schur'})
 		1: returns Schur form
 		0: not returned
  Returned values:
 	    eigenvalues (SCALAR CONTEXT),
-	    left eigenvectors if required,
-	    right eigenvectors if required,
+	    left eigenvectors if requested,
+	    right eigenvectors if requested,
 	    HASH{'norm'}:
 	    	One-norm of the matrix
 	    HASH{'info'}:
@@ -5866,12 +5868,12 @@ L<cggevx|PDL::LinearAlgebra::Complex/cggevx> from Lapack.
 
  (PDL(alpha), PDL(beta), PDL(lv),  PDL(rv), HASH(result) ) = mgeigenx(PDL(a), PDL(b), HASH(options))
  where options are:
- vector:    eigenvectors to compute
+ vector:     eigenvectors to compute
 		'left':  computes left eigenvectors
 		'right': computes right eigenvectors
 		'all':   computes left and right eigenvectors
 		 0:     doesn't compute (default)
- rcondition: reciprocal condition numbers to compute (returned in HASH{'rconde'} and HASH{'rcondv'})
+ rcondition: reciprocal condition numbers to compute (returned in HASH{'rconde'} for eigenvalues and HASH{'rcondv'} for eigenvectors)
 		'value':  computes reciprocal condition numbers for eigenvalues
 		'vector': computes reciprocal condition numbers for eigenvectors
 		'all':    computes reciprocal condition numbers for eigenvalues and eigenvectors
@@ -5896,8 +5898,8 @@ L<cggevx|PDL::LinearAlgebra::Complex/cggevx> from Lapack.
  Returned values:
 	    alpha,
 	    beta,
-	    left eigenvectors if required,
-	    right eigenvectors if required,
+	    left eigenvectors if requested,
+	    right eigenvectors if requested,
 	    HASH{'anorm'}, HASH{'bnorm'}:
 	    	One-norm of the matrix A and B
 	    HASH{'info'}:
@@ -6196,7 +6198,7 @@ or L<cheevr|PDL::LinearAlgebra::Complex/cheevr> for complex.
  		'cheevr'
  Returned values:
  		eigenvalues (SCALAR CONTEXT),
- 		eigenvectors if required,
+ 		eigenvectors if requested,
  		total number of eigenvalues found (n),
  		info
 		issupz or ifail (support) according to method used and returned info,
@@ -6459,7 +6461,7 @@ from Lapack.
  abstol:        specifie error tolerance for eigenvalues
  Returned values:
  		eigenvalues (SCALAR CONTEXT),
- 		eigenvectors if required,
+ 		eigenvectors if requested,
  		total number of eigenvalues found (n),
  		info
 		ifail according to returned info (support).
