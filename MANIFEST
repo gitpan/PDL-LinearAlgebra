@@ -1,6 +1,6 @@
 Artistic
 Changes
-Complex/Complex.pd
+Complex/complex.pd
 Complex/Makefile.PL
 Complex/Makefile.PL.pkg
 Config
@@ -14,10 +14,10 @@ MANIFEST			This list of files
 README
 Real/Makefile.PL
 Real/Makefile.PL.pkg
-Real/Real.pd
+Real/real.pd
 Special/Makefile.PL
 Special/Special.pm
 t/1.t
 Trans/Makefile.PL
 Trans/Makefile.PL.pkg
-Trans/Trans.pd
+Trans/trans.pd

@@ -377,7 +377,7 @@ sub PDL::mcompanion{
 
 =head1 AUTHOR
 
-Copyright (C) Grégory Vanuxem 2005.
+Copyright (C) Grégory Vanuxem 2005-2007.
 
 This library is free software; you can redistribute it and/or modify
 it under the terms of the artistic license as specified in the Artistic

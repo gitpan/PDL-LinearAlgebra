@@ -1,5 +1,14 @@
 Revision history for Perl extension PDL::LinearAlgebra
 
+0.04  Thu Aug 16 00:00:00 2007
+
+  * mnorm fix (complex)
+  * mfun fix (inplace operations are not supported on upstream PDL::Complex (PDL <= 2.4.3)
+  * remove stringizing routine for PDL::Complex (in upstream now PDL >= 2.4.3)
+    add format variables (forgotten in upstream PDL 2.4.3)
+  * sumover for PDL::Complex fix (dims < 2)
+  * documentation improvements and fixes
+
 0.03  Mon Sep 12 18:05:15 2005
 
   * documentation corrections

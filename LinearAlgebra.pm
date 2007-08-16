@@ -20,7 +20,7 @@ use constant{
 
 use strict;
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 @PDL::LinearAlgebra::ISA = qw/PDL::Exporter/;
 @PDL::LinearAlgebra::EXPORT_OK = qw/t diag issym minv mtriinv msyminv mposinv mdet mposdet mrcond positivise
@@ -47,28 +47,29 @@ sub neginf() { $neginf->copy };
 {
 
 package PDL::Complex;
-use PDL::Types;
-use vars qw($sep $sep2);
-use overload (
-		"\"\""  =>  \&PDL::Complex::string
-		);
 
-our $floatformat  = "%4.4g";    # Default print format for long numbers
-our $doubleformat = "%6.6g";
+*r2p = \&PDL::Complex::Cr2p;
+*p2r = \&PDL::Complex::Cp2r;
+*scale = \&PDL::Complex::Cscale;
+*conj = \&PDL::Complex::Cconj;
+*abs2 = \&PDL::Complex::Cabs2;
+*arg = \&PDL::Complex::Carg;
+*tan = \&PDL::Complex::Ctan;
+*proj = \&PDL::Complex::Cproj;
+*asin = \&PDL::Complex::Casin;
+*acos = \&PDL::Complex::Cacos;
+*atan = \&PDL::Complex::Catan;
+*sinh = \&PDL::Complex::Csinh;
+*cosh = \&PDL::Complex::Ccosh;
+*tanh = \&PDL::Complex::Ctanh;
+*asinh = \&PDL::Complex::Casinh;
+*acosh = \&PDL::Complex::Cacosh;
+*atanh = \&PDL::Complex::Catanh;
+*prodover = \&PDL::Complex::Cprodover;
 
-
-#TODO: BEWARE $info -- and returned value
-
-##################### Printing ####################
-
-# New string routine
-
-$PDL::Complex::_STRINGIZING = 0;
-
-#sub nslice{bless PDL::nslice(@_), 'PDL';}
-sub cplx{
+sub cplx {
   my ($re, $im) = @_;
-  return $re if UNIVERSAL::isa($re,'PDL::Complex'); # NOOP if just piddle
+  return $re if UNIVERSAL::isa($re,'PDL::Complex');
   if (defined $im){
 	  $re = pdl($re) unless (UNIVERSAL::isa($re,'PDL'));
 	  $im = pdl($im) unless (UNIVERSAL::isa($im,'PDL'));
@@ -82,43 +83,14 @@ sub cplx{
 }
 
 
-
-sub PDL::Complex::string {
-    my($self,$format1,$format2)=@_;
-    my @dims = $self->dims;
-    return PDL::string($self) if ($dims[0] != 2);
-
-    if($PDL::Complex::_STRINGIZING) {
-    	return "ALREADY_STRINGIZING_NO_LOOPS";
-    }
-    local $PDL::Complex::_STRINGIZING = 1;
-    my $ndims = $self->getndims;
-    if($self->nelem > 10000) {
-    	return "TOO LONG TO PRINT";
-    }
-    if ($ndims==0){
-    	PDL::Core::string($self,$format1);
-    }
-    return "Null" if $self->isnull;
-    return "Empty" if $self->isempty; # Empty piddle
-    local $sep  = $PDL::use_commas ? ", " : "  ";
-    local $sep2 = $PDL::use_commas ? ", " : "";
-    if ($ndims < 3) {
-       return str1D($self,$format1,$format2);
-    }
-    else{
-       return strND($self,$format1,$format2,0);
-    }
-}
-
-sub sumover{
-	my $m = shift;
-	PDL::Ufunc::sumover($m->xchg(0,1));
+sub sumover {
+	my $c = shift;
+	return dims($c) > 1 ? PDL::Ufunc::sumover($c->xchg(0,1)) : $c;
 }
 
 
 
-sub norm{
+sub norm {
 	my ($m, $real, $trans) = @_;
 	
 	# If trans == true => transpose output matrice
@@ -140,226 +112,6 @@ sub norm{
 }
 
 
-
-sub strND {
-    my($self,$format1,$format2,$level)=@_;
-    my @dims = $self->dims;
-
-    if ($#dims==2) {
-       return str2D($self,$format1,$format2,$level);
-    }
-    else {
-       my $secbas = join '',map {":,"} @dims[0..$#dims-1];
-       my $ret="\n"." "x$level ."["; my $j;
-       for ($j=0; $j<$dims[$#dims]; $j++) {
-       	   my $sec = $secbas . "($j)";
-
-           $ret .= strND($self->slice($sec),$format1,$format2, $level+1);
-	   chop $ret; $ret .= $sep2;
-       }
-       chop $ret if $PDL::use_commas;
-       $ret .= "\n" ." "x$level ."]\n";
-       return $ret;
-    }
-}
-
-
-# String 1D array in nice format
-
-sub str1D {
-    my($self,$format1,$format2)=@_;
-    barf "Not 1D" if $self->getndims() > 2;
-    my $x = PDL::Core::listref_c($self);
-    my ($ret,$dformat,$t, $i);
-
-    my $dtype = $self->get_datatype();
-    $dformat = $PDL::Complex::floatformat  if $dtype == $PDL_F;
-    $dformat = $PDL::Complex::doubleformat if $dtype == $PDL_D;
-
-    $ret = "[" if $self->getndims() > 1;
-    my $badflag = $self->badflag();
-    for($i=0; $i<=$#$x; $i++){
-	$t = $$x[$i];
-	if ( $badflag and $t eq "BAD" ) {
-	    # do nothing
-        } elsif ($format1) {
-	  $t =  sprintf $format1,$t;
-	} else{ # Default
-	    if ($dformat && length($t)>7) { # Try smaller
-		$t = sprintf $dformat,$t;
-	    }
-	}
-       $ret .= $i % 2 ? 
-		$i<$#$x ? $t."i$sep" : $t."i"
-       			: substr($$x[$i+1],0,1) eq "-" ?  "$t " : $t." +";
-    }
-    $ret.="]" if $self->getndims() > 1;
-    return $ret;
-}
-
-sub str2D{
-    my($self,$format1,$format2,$level)=@_;
-    my @dims = $self->dims();
-    barf "Not 2D" if scalar(@dims)!=3;
-    my $x = PDL::Core::listref_c($self);
-    my ($i, $f, $t, $len1, $len2, $ret);
-
-    my $dtype = $self->get_datatype();
-    my $badflag = $self->badflag();
-
-    my $findmax = 0;
-
-    if (!defined $format1 || !defined $format2 || 
-    		$format1 eq '' || $format2 eq '') { 
-	$len1= $len2 = 0;
-
-	if ( $badflag ) {
-	    for($i=0; $i<=$#$x; $i++){
-		if ( $$x[$i] eq "BAD" ){ 
-			$f = 3;
-		} 
-		else{
-			$f = length($$x[$i]);
-		}
-		if ($i % 2){
-			$len2 = $f if $f > $len2;
-		}
-		else{
-			$len1 = $f if $f > $len1;
-		}
-	    } 
-	} else {
-		for ($i=0; $i<=$#$x; $i++) {
-	    		$f = length($$x[$i]); 
-			if ($i % 2){
-				$len2 = $f if $f > $len2;
-			}
-			else{
-				$len1 = $f if $f > $len1;
-			}
-		}
-	}
-
-	$format1 = '%'.$len1.'s';
-	$format2 = '%'.$len2.'s';
-	
-	if ($len1 > 5){
-	    if ($dtype == $PDL_F) {
-		$format1 = $PDL::Complex::floatformat;
-		$findmax = 1;
-	    } elsif ($dtype == $PDL_D) {
-		$format1 = $PDL::Complex::doubleformat;
-		$findmax = 1;
-	    } else {
-		$findmax = 0;
-	    }
-	}
-	if($len2 > 5){
-	    if ($dtype == $PDL_F) {
-		$format2 = $PDL::Complex::floatformat;
-		$findmax = 1;
-	    } elsif ($dtype == $PDL_D) {
-		$format2 = $PDL::Complex::doubleformat;
-		$findmax = 1;
-	    } else {
-		$findmax = 0 unless $findmax;
-	    }
-	}
-    }
-
-    if($findmax) {
-	$len1 = $len2=0;
-	
-	if ( $badflag ) {
-	    for($i=0; $i<=$#$x; $i++){
-		$findmax = $i % 2;
-		if ( $$x[$i] eq 'BAD' ){ 
-			$f = 3;
-		} 
-		else{
-			$f = $findmax ? length(sprintf $format2,$$x[$i]) :
-					length(sprintf $format1,$$x[$i]);
-		}
-		if ($findmax){
-			$len2 = $f if $f > $len2;
-		}
-		else{
-			$len1 = $f if $f > $len1;
-		}
-	    } 
-	} else {
-		for ($i=0; $i<=$#$x; $i++) {
-			if ($i % 2){
-		    		$f = length(sprintf $format2,$$x[$i]); 
-				$len2 = $f if $f > $len2;
-			}
-			else{
-		    		$f = length(sprintf $format1,$$x[$i]); 
-				$len1 = $f if $f > $len1;
-			}
-		}
-	}
-
-
-    } # if: $findmax
-
-    $ret = "\n" . ' 'x$level . "[\n";
-    { 
-	my $level = $level+1;
-	$ret .= ' 'x$level .'[';
-	$len2 += 2;
-
-	for ($i=0; $i<=$#$x; $i++) {
-	    	$findmax = $i % 2;
-		if ($findmax){
-		    if ( $badflag and  $$x[$i] eq 'BAD' ){
-	    		#|| 
-	    		#($findmax && $$x[$i - 1 ] eq 'BAD') ||
-	    		#(!$findmax && $$x[$i +1 ] eq 'BAD')){
-				$f = "BAD";
-		    	}
-		    	else{
-				$f = sprintf $format2, $$x[$i];
-				if (substr($$x[$i],0,1) eq '-'){
-					$f.='i';
-				}
-				else{
-					$f =~ s/(\s*)(.*)/+$2i/;
-				}
-      			}
-			$t = $len2-length($f);
-		}
-		else{
-		    	if ( $badflag and  $$x[$i] eq 'BAD' ){
-				$f = "BAD";
-		    	}
-		    	else{
-				$f = sprintf $format1, $$x[$i];
-		       		$t =  $len1-length($f);
-			}
-		}
-
-	    $f = ' 'x$t.$f if $t>0;
-
-	    $ret .= $f;
-	    if (($i+1)%($dims[1]*2)) {
-		$ret.=$sep if $findmax;
-	    }
-	    else{ # End of output line
-		$ret.=']';
-		if ($i==$#$x) { # very last number
-		    $ret.="\n";
-		}
-		else{
-		    $ret.= $sep2."\n" . ' 'x$level .'[';
-		}
-	    }
-	}
-    }
-    $ret .= ' 'x$level."]\n";
-    return $ret;
-}
-
 }
 ########################################################################
 
@@ -377,7 +129,14 @@ PDL::LinearAlgebra - Linear Algebra utils for PDL
 =head1 DESCRIPTION
 
 This module provides a convenient interface to L<PDL::LinearAlgebra::Real|PDL::LinearAlgebra::Real>
-and L<PDL::LinearAlgebra::Complex|PDL::LinearAlgebra::Complex>.
+and L<PDL::LinearAlgebra::Complex|PDL::LinearAlgebra::Complex>. Its primary purpose is educational.
+You have to know that routines defined here are not optimized, particularly in term of memory. Since
+Blas and Lapack use a column major ordering scheme some routines here need to transpose matrices before
+calling fortran routines and transpose back (see the documentation of each routine). If you need
+optimized code use directly  L<PDL::LinearAlgebra::Real|PDL::LinearAlgebra::Real> and 
+L<PDL::LinearAlgebra::Complex|PDL::LinearAlgebra::Complex>. It's planned to "port" this module to PDL::Matrix such
+that transpositions will not be necessary, the major problem is that two new modules need to be created PDL::Matrix::Real
+and PDL::Matrix::Complex.
 
 
 =cut
@@ -389,28 +148,20 @@ and L<PDL::LinearAlgebra::Complex|PDL::LinearAlgebra::Complex>.
 
 =for ref
 
-Set action type when error is encountered, returns previous type. Available values are NO, WARN and BARF (predefined constants).
+Sets action type when an error is encountered, returns previous type. Available values are NO, WARN and BARF (predefined constants).
 If, for example, in computation of the inverse, singularity is detected,
 the routine can silently return values from computation (see manuals), 
 warn about singularity or barf. BARF is the default value.
 
 =for example
 
+ # h : x -> g(f(x))
+
  $a = sequence(5,5);
  $err = setlaerror(NO);
- ($inv, $info)= minv($a);
- if ($info){
- 	# Change the diagonal (the inverse doesn't exist but it's an example)
- 	$a->diagonal(0,1)+=1e-8;
-	($inv, $info)= minv($a);
- }
- if ($info){
- 	print "Can't compute the inverse\n";
- }
- else{
- 	print "Inverse of \$a is $inv";
- }
+ ($b, $info)= f($a);
  setlaerror($err);
+ $info ? barf "can't compute h" : return g($b);
 
 
 =cut
@@ -425,7 +176,7 @@ sub setlaerror($){
 
 =for ref
 
-Get error type.
+Gets action type when an error is encountered.
 	
 	0 => NO,
 	1 => WARN,
@@ -457,7 +208,7 @@ sub laerror{
 =for ref
 
 Convenient function for transposing real or complex 2D array(s).
-For PDL::Complex, if conj is true returns conjugate transpose array(s) and doesn't support dataflow.
+For PDL::Complex, if conj is true returns conjugate transposed array(s) and doesn't support dataflow.
 Supports threading.
 
 =cut
@@ -486,7 +237,7 @@ sub PDL::Complex::t {
 
 =for ref
 
-Check symmetricity/Hermitianicity of matrix.
+Checks symmetricity/Hermitianicity of matrix.
 Supports threading.
 
 =cut
@@ -539,7 +290,7 @@ sub PDL::Complex::issym {
 
 =for ref
 
-Return i-th diagonal if matrix in entry or matrix with i-th diagonal
+Returns i-th diagonal if matrix in entry or matrix with i-th diagonal
 with entry. I-th diagonal returned flows data back&forth.
 Can be used as lvalue subs if your perl supports it.
 Supports threading.
@@ -631,7 +382,7 @@ use attributes 'PDL', \&PDL::Complex::diag, 'lvalue';
 
 =for ref
 
-Return symmetric or Hermitian matrix from lower or upper triangular matrix.
+Returns symmetric or Hermitian matrix from lower or upper triangular matrix.
 Supports inplace and threading.
 Uses L<tricpy|PDL::LinearAlgebra::Real/tricpy> or L<ctricpy|PDL::LinearAlgebra::Complex/ctricpy> from Lapack.
 
@@ -691,8 +442,8 @@ sub PDL::Complex::tritosym {
 
 =for ref
 
-Return entry pdl with changed sign by row so that average of positive sign  > 0.
-In other words thread among dimension 1 and row  =  -row if Sum(sign(row)) < 0.
+Returns entry pdl with changed sign by row so that average of positive sign > 0.
+In other words threads among dimension 1 and row  =  -row if sum(sign(row)) < 0.
 Works inplace.
 
 =for example
@@ -720,8 +471,8 @@ sub PDL::positivise{
 
 =for ref
 
-Compute the cross-product of two matrix: A' x  B. 
-If only one matrix is given, take B to be the same as A.
+Computes the cross-product of two matrix: A' x  B. 
+If only one matrix is given, takes B to be the same as A.
 Supports threading.
 Uses L<crossprod|PDL::LinearAlgebra::Real/crossprod> or L<ccrossprod|PDL::LinearAlgebra::Complex/ccrossprod>.
 
@@ -768,7 +519,7 @@ sub PDL::Complex::mcrossprod {
 
 =for ref
 
-Compute the rank of a matrix, using a singular value decomposition.
+Computes the rank of a matrix, using a singular value decomposition.
 from Lapack.
 
 =for usage
@@ -811,7 +562,7 @@ sub PDL::mrank {
 
 =for ref
 
-Compute norm of real or complex matrix
+Computes norm of real or complex matrix
 Supports threading.
 
 =for usage
@@ -826,11 +577,11 @@ Supports threading.
 =for example
 
  my $a = random(10,10);
- my $norm = mnrom($a);
+ my $norm = mnorm($a);
 
 =cut
 
-sub mnorm{
+sub mnorm {
 	my $m =shift;
 	$m->mnorm(@_);
 }
@@ -879,7 +630,7 @@ sub PDL::mnorm {
 }
 
 
-sub PDL::mnorm {
+sub PDL::Complex::mnorm {
 	my ($m, $ord) = @_;
 	$ord = 2 unless (defined $ord);
 
@@ -927,7 +678,7 @@ sub PDL::mnorm {
 
 =for ref
 
-Compute determinant of a general square matrix using LU factorization.
+Computes determinant of a general square matrix using LU factorization.
 Supports threading.
 Uses L<getrf|PDL::LinearAlgebra::Real/getrf> or L<cgetrf|PDL::LinearAlgebra::Complex/cgetrf>
 from Lapack.
@@ -1068,9 +819,9 @@ sub PDL::Complex::mposdet {
 
 =for ref
 
-Compute the condition number (two-norm) of a general matrix. 
+Computes the condition number (two-norm) of a general matrix. 
 
-The condition number (two-norm) is defined:
+The condition number in two-n is defined:
 
 	norm (a) * norm (inv (a)).
 
@@ -1152,7 +903,7 @@ sub PDL::Complex::mcond {
 
 =for ref
 
-Estimate the reciprocal condition number of a
+Estimates the reciprocal condition number of a
 general square matrix using LU factorization
 in either the 1-norm or the infinity-norm.
 
@@ -1161,6 +912,7 @@ The reciprocal condition number is defined:
 	1/(norm (a) * norm (inv (a)))
 
 Supports threading.
+Works on transposed array(s)
 
 =for usage
 
@@ -1248,7 +1000,7 @@ sub PDL::Complex::mrcond {
 
 =for ref
 
-Return an orthonormal basis of the range space of matrix A.
+Returns an orthonormal basis of the range space of matrix A.
 
 =for usage
 
@@ -1257,7 +1009,7 @@ Return an orthonormal basis of the range space of matrix A.
 
 =for example
 
- my $a = random(10,10);
+ my $a = sequence(10,10);
  my $ortho = morth($a, 1e-8);
 
 =cut
@@ -1291,7 +1043,8 @@ sub PDL::morth {
 
 =for ref
 
-Return an orthonormal basis of the null space of matrix A.
+Returns an orthonormal basis of the null space of matrix A.
+Works on transposed array.
 
 =for usage
 
@@ -1300,7 +1053,7 @@ Return an orthonormal basis of the null space of matrix A.
 
 =for example
 
- my $a = random(10,10);
+ my $a = sequence(10,10);
  my $null = mnull($a, 1e-8);
 
 =cut
@@ -1337,10 +1090,10 @@ sub PDL::mnull {
 
 =for ref
 
-Compute inverse of a general square matrix using LU factorization. Supports inplace and threading.
+Computes inverse of a general square matrix using LU factorization. Supports inplace and threading.
 Uses L<getrf|PDL::LinearAlgebra::Real/getrf> and L<getri|PDL::LinearAlgebra::Real/getri>
 or L<cgetrf|PDL::LinearAlgebra::Complex/cgetrf> and L<cgetri|PDL::LinearAlgebra::Complex/cgetri>
-from Lapack and return C<inverse, info> in array context.
+from Lapack and returns C<inverse, info> in array context.
 
 =for usage
 
@@ -1407,7 +1160,7 @@ sub PDL::Complex::minv {
 
 =for ref
 
-Compute inverse of a triangular matrix. Supports inplace and threading.
+Computes inverse of a triangular matrix. Supports inplace and threading.
 Uses L<trtri|PDL::LinearAlgebra::Real/trtri> or L<ctrtri|PDL::LinearAlgebra::Complex/ctrtri> from Lapack.
 Returns C<inverse, info> in array context.
 
@@ -1479,7 +1232,7 @@ sub PDL::Complex::mtriinv{
 
 =for ref
 
-Compute inverse of a symmetric square matrix using the Bunch-Kaufman diagonal pivoting method.
+Computes inverse of a symmetric square matrix using the Bunch-Kaufman diagonal pivoting method.
 Supports inplace and threading.
 Uses L<sytrf|PDL::LinearAlgebra::Real/sytrf> and L<sytri|PDL::LinearAlgebra::Real/sytri> or
 L<csytrf|PDL::LinearAlgebra::Complex/csytrf> and L<csytri|PDL::LinearAlgebra::Complex/csytri>
@@ -1563,7 +1316,7 @@ sub PDL::Complex::msyminv {
 
 =for ref
 
-Compute inverse of a symmetric positive definite square matrix using Cholesky factorization.
+Computes inverse of a symmetric positive definite square matrix using Cholesky factorization.
 Supports inplace and threading.
 Uses L<potrf|PDL::LinearAlgebra::Real/potrf> and L<potri|PDL::LinearAlgebra::Real/potri> or
 L<cpotrf|PDL::LinearAlgebra::Complex/cpotrf> and L<cpotri|PDL::LinearAlgebra::Complex/cpotri>
@@ -1643,7 +1396,8 @@ sub PDL::Complex::mposinv {
 
 =for ref
 
-Compute pseudo-inverse (Moore-Penrose) of a general matrix.
+Computes pseudo-inverse (Moore-Penrose) of a general matrix.
+Works on transposed array.
 
 =for usage
 
@@ -1668,7 +1422,7 @@ sub PDL::mpinv{
 	my ($ind, $cind, $u, $s, $v, $info, $err);
 
 	$err = setlaerror(NO);
-	#TODO: doesn't transpose
+	#TODO: don't transpose
 	($u, $s, $v, $info) = $m->mdsvd(2);
 	setlaerror($err);
 	laerror("mpinv: SVD algorithm did not converge\n") if $info;
@@ -1694,9 +1448,10 @@ sub PDL::mpinv{
 
 =for ref
 
-Compute LU factorization.
+Computes LU factorization.
 Uses L<getrf|PDL::LinearAlgebra::Real/getrf> or L<cgetrf|PDL::LinearAlgebra::Complex/cgetrf>
-from Lapack and return L, U, pivot and info.
+from Lapack and returns L, U, pivot and info.
+Works on transposed array.
 
 =for usage
 
@@ -1778,7 +1533,7 @@ sub PDL::mlu {
 
 =for ref
 
-Compute Cholesky decomposition of a symmetric matrix also knows as symmetric square root.
+Computes Cholesky decomposition of a symmetric matrix also knows as symmetric square root.
 If inplace flag is set, overwrite  the leading upper or lower triangular part of A else returns
 triangular matrix. Returns C<cholesky, info> in array context.
 Supports threading.
@@ -1854,7 +1609,7 @@ sub PDL::Complex::mchol {
 
 =for ref
 
-Reduce a square matrix to Hessenberg form H and orthogonal matrix Q.
+Reduces a square matrix to Hessenberg form H and orthogonal matrix Q.
 
 It reduces a general matrix A to upper Hessenberg form H by an orthogonal
 similarity transformation:
@@ -1868,6 +1623,7 @@ or
 Uses L<gehrd|PDL::LinearAlgebra::Real/gehrd> and L<orghr|PDL::LinearAlgebra::Real/orghr> or
 L<cgehrd|PDL::LinearAlgebra::Complex/cgehrd> and L<cunghr|PDL::LinearAlgebra::Complex/cunghr>
 from Lapack and returns C<H> in scalar context else C<H> and C<Q>.
+Works on transposed array.
 
 =for usage
 
@@ -1923,13 +1679,14 @@ sub PDL::mhessen {
 
 =for ref
 
-Compute Schur form, works inplace.
+Computes Schur form, works inplace.
 
 	A = Z x T x Z'
 
 Supports threading for unordered eigenvalues.
 Uses L<gees|PDL::LinearAlgebra::Real/gees> or L<cgees|PDL::LinearAlgebra::Complex/cgees>
 from Lapack and returns schur(T) in scalar context.
+Works on tranposed array(s).
 
 =for usage
 
@@ -2337,9 +2094,10 @@ sub PDL::Complex::mschur {
 
 =for ref
 
-Compute Schur form, works inplace.
-Uses L<gees|PDL::LinearAlgebra::Real/gees> or L<cgees|PDL::LinearAlgebra::Complex/cgees>
+Computes Schur form, works inplace.
+Uses L<geesx|PDL::LinearAlgebra::Real/geesx> or L<cgeesx|PDL::LinearAlgebra::Complex/cgeesx>
 from Lapack and returns schur(T) in scalar context.
+Works on transposed array.
 
 =for usage
 
@@ -2741,13 +2499,14 @@ sub magn_norm{
 
 =for ref
 
-Compute generalized Schur decomposition of the pair (A,B).
+Computes generalized Schur decomposition of the pair (A,B).
 
 	A = Q x S x Z'
 	B = Q x T x Z'
 
 Uses L<gges|PDL::LinearAlgebra::Real/gges> or L<cgges|PDL::LinearAlgebra::Complex/cgges>
 from Lapack.
+Works on transposed array.
 
 =for usage
 
@@ -3262,13 +3021,13 @@ sub PDL::Complex::mgschur{
 
 =for ref
 
-Compute generalized Schur decomposition of the pair (A,B).
+Computes generalized Schur decomposition of the pair (A,B).
 
 	A = Q x S x Z'
 	B = Q x T x Z'
 
 Uses L<ggesx|PDL::LinearAlgebra::Real/ggesx> or L<cggesx|PDL::LinearAlgebra::Complex/cggesx>
-from Lapack.
+from Lapack. Works on transposed array.
 
 =for usage
 
@@ -3731,11 +3490,11 @@ sub PDL::mgschurx{
 
 =for ref
 
-Compute QR decomposition.
+Computes QR decomposition.
 For complex number needs object of type PDL::Complex.
 Uses L<geqrf|PDL::LinearAlgebra::Real/geqrf> and L<orgqr|PDL::LinearAlgebra::Real/orgqr>
 or L<cgeqrf|PDL::LinearAlgebra::Complex/cgeqrf> and L<cungqr|PDL::LinearAlgebra::Complex/cungqr>
-from Lapack and returns C<Q> in scalar context.
+from Lapack and returns C<Q> in scalar context. Works on transposed array.
 
 =for usage
 
@@ -3746,7 +3505,7 @@ from Lapack and returns C<Q> in scalar context.
 
  my $a = random(10,10);
  my ( $q, $r )  = mqr($a);
- # Can compute full decomposition if row > col
+ # Can compute full decomposition if nrow > ncol
  $a = random(5,7);
  ( $q, $r )  = $a->mqr(1);
 
@@ -3831,11 +3590,11 @@ sub PDL::Complex::mqr {
 
 =for ref
 
-Compute RQ decomposition.
+Computes RQ decomposition.
 For complex number needs object of type PDL::Complex.
 Uses L<gerqf|PDL::LinearAlgebra::Real/gerqf> and L<orgrq|PDL::LinearAlgebra::Real/orgrq>
 or L<cgerqf|PDL::LinearAlgebra::Complex/cgerqf> and L<cungrq|PDL::LinearAlgebra::Complex/cungrq>
-from Lapack and returns C<Q> in scalar context.
+from Lapack and returns C<Q> in scalar context. Works on transposed array.
 
 =for usage
 
@@ -3846,7 +3605,7 @@ from Lapack and returns C<Q> in scalar context.
 
  my $a = random(10,10);
  my ( $r, $q )  = mrq($a);
- # Can compute full decomposition if row < col
+ # Can compute full decomposition if nrow < ncol
  $a = random(5,7);
  ( $r, $q )  = $a->mrq(1);
 
@@ -3969,11 +3728,11 @@ sub PDL::Complex::mrq {
 
 =for ref
 
-Compute QL decomposition.
+Computes QL decomposition.
 For complex number needs object of type PDL::Complex.
 Uses L<geqlf|PDL::LinearAlgebra::Real/geqlf> and L<orgql|PDL::LinearAlgebra::Real/orgql>
 or L<cgeqlf|PDL::LinearAlgebra::Complex/cgeqlf> and L<cungql|PDL::LinearAlgebra::Complex/cungql>
-from Lapack and returns C<Q> in scalar context.
+from Lapack and returns C<Q> in scalar context. Works on transposed array.
 
 =for usage
 
@@ -3984,7 +3743,7 @@ from Lapack and returns C<Q> in scalar context.
 
  my $a = random(10,10);
  my ( $q, $l )  = mql($a);
- # Can compute full decomposition if row > col
+ # Can compute full decomposition if nrow > ncol
  $a = random(5,7);
  ( $q, $l )  = $a->mql(1);
 
@@ -4107,11 +3866,11 @@ sub PDL::Complex::mql{
 
 =for ref
 
-Compute LQ decomposition.
+Computes LQ decomposition.
 For complex number needs object of type PDL::Complex.
 Uses L<gelqf|PDL::LinearAlgebra::Real/gelqf> and L<orglq|PDL::LinearAlgebra::Real/orglq>
 or L<cgelqf|PDL::LinearAlgebra::Complex/cgelqf> and L<cunglq|PDL::LinearAlgebra::Complex/cunglq>
-from Lapack and returns C<Q> in scalar context.
+from Lapack and returns C<Q> in scalar context. Works on transposed array.
 
 =for usage
 
@@ -4122,7 +3881,7 @@ from Lapack and returns C<Q> in scalar context.
 
  my $a = random(10,10);
  my ( $l, $q )  = mlq($a);
- # Can compute full decomposition if row < col
+ # Can compute full decomposition if nrow < ncol
  $a = random(5,7);
  ( $l, $q )  = $a->mlq(1);
 
@@ -4226,14 +3985,15 @@ sub PDL::Complex::mlq{
 
 =for ref
 
-Solve linear sytem of equations using LU decomposition.
+Solves linear system of equations using LU decomposition.
 	
 	A * X = B
 
 Returns X in scalar context else X, LU, pivot vector and info.
-B is overwrited by X if its inplace flag is set.
+B is overwritten by X if its inplace flag is set.
 Supports threading.
 Uses L<gesv|PDL::LinearAlgebra::Real/gesv> or L<cgesv|PDL::LinearAlgebra::Complex/cgesv> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -4262,7 +4022,7 @@ sub PDL::msolve {
 	barf("msolve: Require square coefficient array(s)")
 		unless( (@adims >= 2) && $adims[0] == $adims[1] );
 	barf("msolve: Require right hand side array(s) B with number".
-			 " of row equal to number of column of A")
+			 " of row equal to number of columns of A")
 		unless( (@bdims >= 2) && $bdims[1] == $adims[0]);
 	barf("msolve: Require arrays with equal number of dimensions")
 		if( @adims != @bdims);
@@ -4321,12 +4081,13 @@ sub PDL::Complex::msolve {
 
 =for ref
 
-Solve linear sytem of equations using LU decomposition.
+Solves linear system of equations using LU decomposition.
 	
 	A * X = B
 
 Can optionnally equilibrate the matrix. 
 Uses L<gesvx|PDL::LinearAlgebra::Real/gesvx> or L<cgesvx|PDL::LinearAlgebra::Complex/cgesvx> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -4450,13 +4211,14 @@ sub PDL::msolvex {
 
 =for ref
 
-Solve linear sytem of equations with triangular matrix A.
+Solves linear system of equations with triangular matrix A.
 	
 	A * X = B  or A' * X = B
 
-B is overwrited by X if its inplace flag is set.
+B is overwritten by X if its inplace flag is set.
 Supports threading.
 Uses L<trtrs|PDL::LinearAlgebra::Real/trtrs> or L<ctrtrs|PDL::LinearAlgebra::Complex/ctrtrs> from Lapack.
+Work on transposed array(s).
 
 =for usage
 
@@ -4546,14 +4308,15 @@ sub PDL::Complex::mtrisolve{
 
 =for ref
 
-Solve linear sytem of equations using diagonal pivoting method with symmetric matrix A.
+Solves linear system of equations using diagonal pivoting method with symmetric matrix A.
 	
 	A * X = B
 
 Returns X in scalar context else X, block diagonal matrix D (and the
-multipliers), pivot vector an info. B is overwrited by X if its inplace flag is set.
+multipliers), pivot vector an info. B is overwritten by X if its inplace flag is set.
 Supports threading.
 Uses L<sysv|PDL::LinearAlgebra::Real/sysv> or L<csysv|PDL::LinearAlgebra::Complex/csysv> from Lapack.
+Works on transposed array(s).
 
 =for usage
 
@@ -4648,12 +4411,12 @@ sub PDL::Complex::msymsolve {
 
 =for ref
 
-Solve linear sytem of equations using diagonal pivoting method with symmetric matrix A.
+Solves linear system of equations using diagonal pivoting method with symmetric matrix A.
 	
 	A * X = B
 
 Uses L<sysvx|PDL::LinearAlgebra::Real/sysvx> or L<csysvx|PDL::LinearAlgebra::Complex/csysvx>
-from Lapack.
+from Lapack. Works on transposed array.
 
 =for usage
 
@@ -4681,7 +4444,7 @@ from Lapack.
  # Assume $a is symmetric
  my $a = random(10,10);
  my $b = random(5,10);
- mu( $X, %result) = msolvex($a, 0, $b);
+ my ($X, %result) = msolvex($a, 0, $b);
 
 
 =cut
@@ -4740,15 +4503,16 @@ sub PDL::msymsolvex {
 
 =for ref
 
-Solve linear sytem of equations using Cholesky decomposition with 
+Solves linear system of equations using Cholesky decomposition with 
 symmetric positive definite matrix A.
 	
 	A * X = B
 
 Returns X in scalar context else X, U or L and info. 
-B is overwrited by X if its inplace flag is set.
+B is overwritten by X if its inplace flag is set.
 Supports threading.
 Uses L<posv|PDL::LinearAlgebra::Real/posv> or L<cposv|PDL::LinearAlgebra::Complex/cposv> from Lapack.
+Works on transposed array(s).
 
 =for usage
 
@@ -4832,7 +4596,7 @@ sub PDL::Complex::mpossolve {
 
 =for ref
 
-Solve linear sytem of equations using Cholesky decomposition with 
+Solves linear system of equations using Cholesky decomposition with 
 symmetric positive definite matrix A
 	
 	A * X = B
@@ -4840,6 +4604,7 @@ symmetric positive definite matrix A
 Can optionnally equilibrate the matrix. 
 Uses L<posvx|PDL::LinearAlgebra::Real/posvx> or
 L<cposvx|PDL::LinearAlgebra::Complex/cposvx> from Lapack.
+Works on transposed array(s).
 
 =for usage
 
@@ -4881,7 +4646,7 @@ L<cposvx|PDL::LinearAlgebra::Complex/cposvx> from Lapack.
  my %options = (U=>1,
  		equilibrate => 1,
 		);
- my( $X, %result) = msolvex($a, 0, $b,%opt);
+ my ($X, %result) = msolvex($a, 0, $b,%opt);
 
 =cut
 
@@ -4950,10 +4715,11 @@ sub PDL::mpossolvex {
 
 =for ref
 
-Solve overdetermined or underdetermined real linear systems using QR or LQ factorization.
+Solves overdetermined or underdetermined real linear systems using QR or LQ factorization.
 
 If M > N in the M-by-N matrix A, returns the residual sum of squares too.
 Uses L<gels|PDL::LinearAlgebra::Real/gels> or L<cgels|PDL::LinearAlgebra::Complex/cgels> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -4979,7 +4745,7 @@ sub PDL::mlls {
 	barf("mlls: Require a matrix")
 		unless( @adims == 2 ||  @adims == 3);
 	barf("mlls: Require a 2D right hand side matrix B with number".
-			 " of row equal to number of row of A")	
+			 " of rows equal to number of rows of A")	
 		unless( (@bdims == 2 || @bdims == 3)&& $bdims[-1] == $adims[-1]);
 
 	$a = $a->copy;
@@ -5026,11 +4792,11 @@ sub PDL::mlls {
 
 =for ref
 
-Compute the minimum-norm solution to a real linear least squares problem
+Computes the minimum-norm solution to a real linear least squares problem
 using a complete orthogonal factorization.
 
 Uses L<gelsy|PDL::LinearAlgebra::Real/gelsy> or L<cgelsy|PDL::LinearAlgebra::Complex/cgelsy>
-from Lapack.
+from Lapack. Works on tranposed arrays.
 
 =for usage
 
@@ -5063,7 +4829,7 @@ sub PDL::mllsy {
 	barf("mllsy: Require a matrix")
 		unless( @adims == 2 || @adims == 3);
 	barf("mllsy: Require a 2D right hand side matrix B with number".
-			 " of row equal to number of row of A")	
+			 " of rows equal to number of rows of A")	
 		unless( (@bdims == 2 || @bdims == 3)&& $bdims[-1] == $adims[-1]);
 
 	$type = $a->type;
@@ -5111,10 +4877,11 @@ sub PDL::mllsy {
 
 =for ref
 
-Compute the minimum-norm solution to a real linear least squares problem
+Computes the minimum-norm solution to a real linear least squares problem
 using a singular value decomposition.
 
 Uses L<gelss|PDL::LinearAlgebra::Real/gelss> or L<gelsd|PDL::LinearAlgebra::Real/gelsd> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -5153,7 +4920,7 @@ sub PDL::mllss {
 	barf("mllss: Require a matrix")
 		unless( @adims == 2 || @adims == 3);
 	barf("mllss: Require a 2D right hand side matrix B with number".
-			 " of row equal to number of row of A")	
+			 " of rows equal to number of rows of A")	
 		unless( (@bdims == 2 || @bdims == 3)&& $bdims[-1] == $adims[-1]);
 
 
@@ -5246,10 +5013,10 @@ sub PDL::mllss {
 
 =for ref
 
-Solve a general Gauss-Markov Linear Model (GLM) problem.
+Solves a general Gauss-Markov Linear Model (GLM) problem.
 Supports threading.
 Uses L<ggglm|PDL::LinearAlgebra::Real/ggglm> or L<cggglm|PDL::LinearAlgebra::Complex/cggglm>
-from Lapack.
+from Lapack. Works on transposed arrays.
 
 =for usage
 
@@ -5277,13 +5044,13 @@ sub PDL::mglm{
 	my(@ddims) = $d->dims;
 	my($x, $y, $info);
 
-	barf("mglm: Require arrays with equal number of row")
+	barf("mglm: Require arrays with equal number of rows")
 		unless( @adims >= 2 && @bdims >= 2 && $adims[1] == $bdims[1]);
 		
 	barf "mglm: Require that column(A) <= row(A) <= column(A) + column(B)" unless
 		( ($adims[0] <= $adims[1] ) && ($adims[1] <= ($adims[0] + $bdims[0])) );
 
-	barf("mglm: Require vector(s) with size equal to number of row of A")
+	barf("mglm: Require vector(s) with size equal to number of rows of A")
 		unless( @ddims >= 1  && $adims[1] == $ddims[0]);
 
 	$a = $a->xchg(0,1)->copy;
@@ -5302,13 +5069,13 @@ sub PDL::Complex::mglm {
 	my(@ddims) = $d->dims;
 	my($x, $y, $info);
 
-	barf("mglm: Require arrays with equal number of row")
+	barf("mglm: Require arrays with equal number of rows")
 		unless( @adims >= 3 && @bdims >= 3 && $adims[2] == $bdims[2]);
 		
 	barf "mglm: Require that column(A) <= row(A) <= column(A) + column(B)" unless
 		( ($adims[2] <= $adims[2] ) && ($adims[2] <= ($adims[1] + $bdims[1])) );
 
-	barf("mglm: Require vector(s) with size equal to number of row of A")
+	barf("mglm: Require vector(s) with size equal to number of rows of A")
 		unless( @ddims >= 2  && $adims[2] == $ddims[1]);
 
 
@@ -5326,9 +5093,9 @@ sub PDL::Complex::mglm {
 
 =for ref
 
-Solve a linear equality-constrained least squares (LSE) problem.
+Solves a linear equality-constrained least squares (LSE) problem.
 Uses L<gglse|PDL::LinearAlgebra::Real/gglse> or L<cgglse|PDL::LinearAlgebra::Complex/cgglse>
-from Lapack.
+from Lapack. Works on transposed arrays.
 
 =for usage
 
@@ -5364,14 +5131,14 @@ sub PDL::mlse {
 
 	my($x, $info);
 
-	barf("mlse: Require 2 matrices with equal number of column")
+	barf("mlse: Require 2 matrices with equal number of columns")
 		unless( ((@adims == 2 && @bdims == 2)||(@adims == 3 && @bdims == 3)) && 
 		$adims[-2] == $bdims[-2]);
 		
-	barf("mlse: Require 1D vector C with size equal to number of A row")
+	barf("mlse: Require 1D vector C with size equal to number of A rows")
 		unless( (@cdims == 1 || @cdims == 2)&& $adims[-1] == $cdims[-1]);
 
-	barf("mlse: Require 1D vector D with size equal to number of B row")
+	barf("mlse: Require 1D vector D with size equal to number of B rows")
 		unless( (@ddims == 1 || @ddims == 2)&& $bdims[-1] == $ddims[-1]);
 
 	barf "mlse: Require that row(B) <= column(A) <= row(A) + row(B)" unless
@@ -5398,13 +5165,14 @@ sub PDL::mlse {
 
 =for ref
 
-Compute eigenvalues and, optionally, the left and/or right eigenvectors of a general square matrix
+Computes eigenvalues and, optionally, the left and/or right eigenvectors of a general square matrix
 (spectral decomposition).
 Eigenvectors are normalized (Euclidean norm = 1) and largest component real.
 The eigenvalues and eigenvectors returned are object of type PDL::Complex.
 If only eigenvalues are requested, info is returned in array context.
 Supports threading.
 Uses L<geev|PDL::LinearAlgebra::Real/geev> or L<cgeev|PDL::LinearAlgebra::Complex/cgeev> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -5503,12 +5271,13 @@ sub PDL::Complex::meigen {
 
 =for ref
 
-Compute eigenvalues, one-norm and, optionally, the left and/or right eigenvectors of a general square matrix
+Computes eigenvalues, one-norm and, optionally, the left and/or right eigenvectors of a general square matrix
 (spectral decomposition).
 Eigenvectors are normalized (Euclidean norm = 1) and largest component real. 
 The eigenvalues and eigenvectors returned are object of type PDL::Complex.
 Uses L<geevx|PDL::LinearAlgebra::Real/geevx> or 
 L<cgeevx|PDL::LinearAlgebra::Complex/cgeevx> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -5740,11 +5509,12 @@ sub PDL::meigenx {
 
 =for ref
 
-Compute generalized eigenvalues and, optionally, the left and/or right generalized eigenvectors
+Computes generalized eigenvalues and, optionally, the left and/or right generalized eigenvectors
 for a pair of N-by-N real nonsymmetric matrices (A,B) .
-The alpha from ratio alpha/beta are object of type PDL::Complex.
+The alpha from ratio alpha/beta is object of type PDL::Complex.
 Supports threading. Uses L<ggev|PDL::LinearAlgebra::Real/ggev> or
 L<cggev|PDL::LinearAlgebra::Complex/cggev> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -5858,11 +5628,12 @@ sub PDL::Complex::mgeigen {
 
 =for ref
 
-Compute generalized eigenvalues, one-norms and, optionally, the left and/or right generalized 
+Computes generalized eigenvalues, one-norms and, optionally, the left and/or right generalized 
 eigenvectors for a pair of N-by-N real nonsymmetric matrices (A,B).
-The alpha from ratio alpha/beta are object of type PDL::Complex.
+The alpha from ratio alpha/beta is object of type PDL::Complex.
 Uses L<ggevx|PDL::LinearAlgebra::Real/ggevx> or
 L<cggevx|PDL::LinearAlgebra::Complex/cggevx> from Lapack.
+Works on transposed arrays.
 
 =for usage
 
@@ -5917,7 +5688,7 @@ L<cggevx|PDL::LinearAlgebra::Complex/cggevx> from Lapack.
              permute=>1,
              shur => 1
              );
- ( $alpha, $beta, $left_eigenvectors, $right_eigenvectors, %result)  = mgeigenx($a, $b,%options);
+ ($alpha, $beta, $left_eigenvectors, $right_eigenvectors, %result)  = mgeigenx($a, $b,%options);
  print "Error bounds for eigenvalues:\n $eigenvalues\n are:\n". transpose($result{'eerror'}) unless $info;
 
 =cut
@@ -6089,13 +5860,14 @@ sub PDL::mgeigenx {
 
 =for ref
 
-Compute eigenvalues and, optionally eigenvectors of a real symmetric square or
+Computes eigenvalues and, optionally eigenvectors of a real symmetric square or
 complex Hermitian matrix (spectral decomposition).
 The eigenvalues are computed from lower or upper triangular matrix.
 If only eigenvalues are requested, info is returned in array context.
 Supports threading and work inplace if eigenvectors are requested.
 From Lapack, uses L<syev|PDL::LinearAlgebra::Real/syev> or L<syevd|PDL::LinearAlgebra::Real/syevd> for real
 and L<cheev|PDL::LinearAlgebra::Complex/cheev> or L<cheevd|PDL::LinearAlgebra::Complex/cheevd> for complex.
+Works on transposed array(s).
 
 =for usage
 
@@ -6172,11 +5944,11 @@ sub PDL::Complex::msymeigen {
 
 =for ref
 
-Compute eigenvalues and, optionally eigenvectors of a symmetric square matrix (spectral decomposition).
+Computes eigenvalues and, optionally eigenvectors of a symmetric square matrix (spectral decomposition).
 The eigenvalues are computed from lower or upper triangular matrix and can be selected by specifying a
 range. From Lapack, uses L<syevx|PDL::LinearAlgebra::Real/syevx> or
 L<syevr|PDL::LinearAlgebra::Real/syevr> for real and L<cheevx|PDL::LinearAlgebra::Complex/cheevx>
-or L<cheevr|PDL::LinearAlgebra::Complex/cheevr> for complex.
+or L<cheevr|PDL::LinearAlgebra::Complex/cheevr> for complex. Works on transposed arrays.
 
 =for usage
 
@@ -6325,12 +6097,13 @@ sub PDL::msymeigenx {
 
 =for ref
 
-Compute eigenvalues and, optionally eigenvectors of a real generalized
+Computes eigenvalues and, optionally eigenvectors of a real generalized
 symmetric-definite or Hermitian-definite eigenproblem.
 The eigenvalues are computed from lower or upper triangular matrix
 If only eigenvalues are requested, info is returned in array context.
 Supports threading. From Lapack, uses L<sygv|PDL::LinearAlgebra::Real/sygv> or L<sygvd|PDL::LinearAlgebra::Real/sygvd> for real
 or L<chegv|PDL::LinearAlgebra::Complex/chegv> or L<chegvd|PDL::LinearAlgebra::Complex/chegvd> for complex.
+Works on transposed array(s).
 
 =for usage
 
@@ -6435,11 +6208,11 @@ sub PDL::Complex::msymgeigen {
 
 =for ref
 
-Compute eigenvalues and, optionally eigenvectors of a real generalized
+Computes eigenvalues and, optionally eigenvectors of a real generalized
 symmetric-definite or Hermitian eigenproblem.
 The eigenvalues are computed from lower or upper triangular matrix and can be selected by specifying a
 range. Uses L<sygvx|PDL::LinearAlgebra::Real/syevx> or L<cheevx|PDL::LinearAlgebra::Complex/cheevx>
-from Lapack.
+from Lapack. Works on transposed arrays.
 
 =for usage
 
@@ -6574,7 +6347,7 @@ sub PDL::msymgeigenx {
 
 =for ref
 
-Compute SVD using Coppen's divide and conquer algorithm.
+Computes SVD using Coppen's divide and conquer algorithm.
 Return singular values in scalar context else left (U),
 singular values, right (V' (hermitian for complex)) singular vectors and info.
 Supports threading.
@@ -6696,8 +6469,8 @@ sub PDL::Complex::mdsvd {
 
 =for ref
 
-Compute SVD.
-Can compute singular value either U or V or neither.
+Computes SVD.
+Can compute singular values, either U or V or neither.
 Return singulars values in scalar context else left (U),
 singular values, right (V' (hermitian for complex) singulars vector and info.
 Supports threading.
@@ -6832,11 +6605,11 @@ sub PDL::Complex::msvd{
 
 =for ref
 
-Compute Generalized (or quotient) singular value decomposition.
+Computes generalized (or quotient) singular value decomposition.
 If the effective rank of (A',B')' is 0 return only unitary V, U, Q.
 For complex number, needs object of type PDL::Complex.
 Uses L<ggsvd|PDL::LinearAlgebra::Real/ggsvd> or
-L<cggsvd|PDL::LinearAlgebra::Complex/cggsvd> from Lapack.
+L<cggsvd|PDL::LinearAlgebra::Complex/cggsvd> from Lapack. Works on transposed arrays.
 
 =for usage
 
@@ -6873,7 +6646,7 @@ sub PDL::mgsvd {
 	my($a, $b, %opt) = @_;
 	my(@adims) = $a->dims;
 	my(@bdims) = $b->dims;
-	barf("mgsvd: Require matrices with equal number of column")
+	barf("mgsvd: Require matrices with equal number of columns")
 		unless( @adims == 2 && @bdims == 2 && $adims[0] == $bdims[0] );
 
 	my ($U, $V, $Q, $alpha, $beta, $k, $l, $iwork, $info, $D2, $D1, $work, %ret, $X, $jobqx, $type);
@@ -6973,7 +6746,7 @@ sub PDL::Complex::mgsvd {
 	my($a, $b, %opt) = @_;
 	my(@adims) = $a->dims;
 	my(@bdims) = $b->dims;
-	barf("mgsvd: Require matrices with equal number of column")
+	barf("mgsvd: Require matrices with equal number of columns")
 		unless( @adims == 3 && @bdims == 3 && $adims[1] == $bdims[1] );
 
 	my ($U, $V, $Q, $alpha, $beta, $k, $l, $iwork, $info, $D2, $D1, $work, %ret, $X, $jobqx, $type);
@@ -7074,29 +6847,29 @@ sub PDL::Complex::mgsvd {
 
 
 
-=head1 TODO
+#TODO
 
-Others things
+# Others things
 
-	rectangular diag
-	usage
-	is_inplace and function which modify entry matrix
-	avoid xchg
-	threading support
-	automatically create PDL
-	inplace operation and memory
-	check s after he/she/it and matrix(s)
-	PDL type, verify float/double
-	eig_det qr_det
-	(g)schur(x): 
-		if conjugate pair
-			non generalized pb: $seldim ?? (cf: generalized)
-			return conjugate pair if only selected?
-	port to PDL::Matrix
+#	rectangular diag
+#	usage
+#	is_inplace and function which modify entry matrix
+#	avoid xchg
+#	threading support
+#	automatically create PDL
+#	inplace operation and memory
+#d	check s after he/she/it and matrix(s)
+#	PDL type, verify float/double
+#	eig_det qr_det
+#	(g)schur(x): 
+#		if conjugate pair
+#			non generalized pb: $seldim ?? (cf: generalized)
+#			return conjugate pair if only selected?
+#	port to PDL::Matrix
 
 =head1 AUTHOR
 
-Copyright (C) Grégory Vanuxem 2005.
+Copyright (C) Grégory Vanuxem 2005-2007.
 
 This library is free software; you can redistribute it and/or modify
 it under the terms of the artistic license as specified in the Artistic
