@@ -1,5 +1,9 @@
 Revision history for Perl extension PDL::LinearAlgebra
 
+0.05  Fri Aug 17 00:00:00 2007
+
+  * version information fixes
+
 0.04  Thu Aug 16 00:00:00 2007
 
   * mnorm fix (complex)

@@ -12,7 +12,7 @@ no warnings 'uninitialized';
 @EXPORT_OK  = qw( mhilb mvander mpart mhankel mtoeplitz mtri mpascal mcompanion);
 %EXPORT_TAGS = (Func=>[@EXPORT_OK]);
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 our @ISA = ( 'PDL::Exporter');
 
 use strict;
@@ -370,10 +370,6 @@ sub PDL::mcompanion{
 	$ret->sever;
 }
 
-
-=head1 TODO
-
-	TODO
 
 =head1 AUTHOR
 

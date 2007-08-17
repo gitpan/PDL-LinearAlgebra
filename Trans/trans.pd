@@ -84,7 +84,7 @@ double z_abs(dcomplex *z)
 ');
 
 
-pp_setversion(0.02);
+pp_setversion(0.03);
 
 pp_addpm({At=>'Top'},<<'EOD');
 use PDL::Func;

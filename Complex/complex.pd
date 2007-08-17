@@ -8,7 +8,7 @@ use PDL::Exporter;
 
 
 
-pp_setversion(0.02);
+pp_setversion(0.03);
 
 
 if ($config{CBLAS}){

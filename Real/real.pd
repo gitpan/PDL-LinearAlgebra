@@ -4,14 +4,14 @@
 
 do('../Config');
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 use PDL::Exporter;
 
 
 #TODO 
 # dot
 
-pp_setversion(0.02);
+pp_setversion(0.04);
 
 sub generate_code($){
 	if ($config{WITHOUT_THREAD}){
@@ -461,7 +461,7 @@ It is much faster than the simple driver for large matrices, but uses more works
  $lines = 50;
  $columns = 100;
  $a = random (float, $lines, $columns);
- $min = $lines < $lines ? $lines : $columns;
+ $min = $lines < $columns ? $lines : $columns;
  $s = zeroes(float, $min);
  $u = zeroes(float, $lines, $lines);
  $vt = zeroes(float, $columns, $columns);
