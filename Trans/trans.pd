@@ -1,4 +1,4 @@
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 use PDL::Exporter;
 
 if ($^O =~ /MSWin/) {
@@ -84,7 +84,7 @@ double z_abs(dcomplex *z)
 ');
 
 
-pp_setversion(0.03);
+pp_setversion(0.04);
 
 pp_addpm({At=>'Top'},<<'EOD');
 use PDL::Func;
@@ -112,9 +112,11 @@ PDL::LinearAlgebra::Trans - Linear Algebra based transcendental functions for PD
 
 =head1 DESCRIPTION
 
-This module provides some transcendental functions on matrices.
+This module provides some transcendental functions for matrices.
 Moreover it provides sec, asec, sech, asech, cot, acot, acoth, coth, csc,
-acsc, csch, acsch.
+acsc, csch, acsch. Beware, importing this module will overwrite the hidden
+PDL routine sec. If you need to call it specify its origin module : PDL::Basic::sec(args)
+
 
 EOD
 
@@ -1025,7 +1027,7 @@ BEGIN { $pi = pdl(3.1415926535897932384626433832795029) }
 sub pi () { $pi->copy };
 
 *sec = \&PDL::sec;
-sub PDL::sec($){1/cos($_[0])}
+sub PDL::sec{1/cos($_[0])}
 
 *csc = \&PDL::csc;
 sub PDL::csc($) {1/sin($_[0])}

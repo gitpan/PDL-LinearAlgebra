@@ -1,5 +1,10 @@
 Revision history for Perl extension PDL::LinearAlgebra
 
+0.06  Thu Oct 09 00:00:00 2007
+
+  * remove conflicting cplx routine (thanks to P. Dupre)
+  * remove prototype of sec
+
 0.05  Fri Aug 17 00:00:00 2007
 
   * version information fixes

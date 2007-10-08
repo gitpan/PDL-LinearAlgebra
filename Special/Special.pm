@@ -12,14 +12,14 @@ no warnings 'uninitialized';
 @EXPORT_OK  = qw( mhilb mvander mpart mhankel mtoeplitz mtri mpascal mcompanion);
 %EXPORT_TAGS = (Func=>[@EXPORT_OK]);
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 our @ISA = ( 'PDL::Exporter');
 
 use strict;
 
 =head1 NAME
 
-PDL::LinearAlgebra::Special - Special matrix for PDL
+PDL::LinearAlgebra::Special - Special matrices for PDL
 
 =head1 SYNOPSIS
 
@@ -29,7 +29,7 @@ PDL::LinearAlgebra::Special - Special matrix for PDL
 
 =head1 DESCRIPTION
 
-This module provides some constructors of well known matrix.
+This module provides some constructors of well known matrices.
 
 =head1 FUNCTIONS
 

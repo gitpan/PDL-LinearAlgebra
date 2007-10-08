@@ -20,7 +20,7 @@ use constant{
 
 use strict;
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 @PDL::LinearAlgebra::ISA = qw/PDL::Exporter/;
 @PDL::LinearAlgebra::EXPORT_OK = qw/t diag issym minv mtriinv msyminv mposinv mdet mposdet mrcond positivise
@@ -48,6 +48,13 @@ sub neginf() { $neginf->copy };
 
 package PDL::Complex;
 
+use PDL::Types;
+
+use vars qw($sep $sep2);
+our $floatformat  = "%4.4g";    # Default print format for long numbers
+our $doubleformat = "%6.6g";
+
+
 *r2p = \&PDL::Complex::Cr2p;
 *p2r = \&PDL::Complex::Cp2r;
 *scale = \&PDL::Complex::Cscale;
@@ -67,7 +74,7 @@ package PDL::Complex;
 *atanh = \&PDL::Complex::Catanh;
 *prodover = \&PDL::Complex::Cprodover;
 
-sub cplx {
+sub ecplx {
   my ($re, $im) = @_;
   return $re if UNIVERSAL::isa($re,'PDL::Complex');
   if (defined $im){
@@ -95,7 +102,7 @@ sub norm {
 	
 	# If trans == true => transpose output matrice
 	# If real == true => rotate (complex as a vector)
-	# 		     such max abs will be real
+	# 		     such that max abs will be real
 	
 	#require PDL::LinearAlgebra::Complex;
 	PDL::LinearAlgebra::Complex::cnrm2($m,1, my $ret = null);
@@ -1923,7 +1930,7 @@ sub PDL::mschur{
 			}
 		}
 	}
-	$w = PDL::Complex::cplx ($wtmp, $wi);
+	$w = PDL::Complex::ecplx ($wtmp, $wi);
 
 	if ($jobv == 2 && $select_func) {
 		$v = $sdim > 0 ? $v->xchg(0,1)->(:($sdim-1),)->sever : null;
@@ -2446,7 +2453,7 @@ sub PDL::mschurx{
 				}
 			}
 		}
-		$w = PDL::Complex::cplx ($wtmp, $wi);
+		$w = PDL::Complex::ecplx ($wtmp, $wi);
 
 		if ($jobv == 2 && $select_func) {
 			$v = $sdim > 0 ? $v->xchg(0,1)->(:($sdim-1),) ->sever : null;
@@ -2793,7 +2800,7 @@ sub PDL::mgschur{
 			}
 		}
 	}
-	$w = PDL::Complex::cplx ($wtmp, $wi);
+	$w = PDL::Complex::ecplx ($wtmp, $wi);
 
 	if ($jobvsr == 2 && $select_func) {
 		$vsr = $sdim  ? $vsr->xchg(0,1)->(:($sdim-1),) ->sever : null;
@@ -3446,7 +3453,7 @@ sub PDL::mgschurx{
 				}
 			}
 		}
-		$w = PDL::Complex::cplx ($wtmp, $wi);
+		$w = PDL::Complex::ecplx ($wtmp, $wi);
 
 		if ($jobvsr == 2 && $select_func) {
 			$vsr = $sdim > 0 ? $vsr->xchg(0,1)->(:($sdim-1),) ->sever : null;
@@ -5218,7 +5225,7 @@ sub PDL::meigen {
 	if ($jobvr){
 		($w, $vr) = cplx_eigen((bless $wr, 'PDL::Complex'), $wi, $vr, 1);
 	}
-	$w = PDL::Complex::cplx( $wr, $wi ) unless $jobvr || $jobvl;
+	$w = PDL::Complex::ecplx( $wr, $wi ) unless $jobvr || $jobvl;
 
 	if($info->max > 0 && $_laerror) {
 		my ($index,@list);
@@ -5571,7 +5578,7 @@ sub PDL::mgeigen {
 	}
 
 
-	$w = PDL::Complex::cplx ($wtmp, $wi);
+	$w = PDL::Complex::ecplx ($wtmp, $wi);
 	if ($jobvl){
 		(undef, $vl) = cplx_eigen((bless $wtmp, 'PDL::Complex'), $wi, $vl, 1);
 	}
@@ -5864,7 +5871,7 @@ Computes eigenvalues and, optionally eigenvectors of a real symmetric square or
 complex Hermitian matrix (spectral decomposition).
 The eigenvalues are computed from lower or upper triangular matrix.
 If only eigenvalues are requested, info is returned in array context.
-Supports threading and work inplace if eigenvectors are requested.
+Supports threading and works inplace if eigenvectors are requested.
 From Lapack, uses L<syev|PDL::LinearAlgebra::Real/syev> or L<syevd|PDL::LinearAlgebra::Real/syevd> for real
 and L<cheev|PDL::LinearAlgebra::Complex/cheev> or L<cheevd|PDL::LinearAlgebra::Complex/cheevd> for complex.
 Works on transposed array(s).
