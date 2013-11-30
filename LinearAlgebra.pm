@@ -20,7 +20,7 @@ use constant{
 
 use strict;
 
-our $VERSION = '0.07';
+our $VERSION = '0.07_01';
 $VERSION = eval $VERSION;
 
 @PDL::LinearAlgebra::ISA = qw/PDL::Exporter/;
@@ -1288,6 +1288,7 @@ sub PDL::msyminv {
 	}
 	else{
 		$m->sytri($upper,$ipiv,$info);
+                $m = $m->t->tritosym($upper);
 	}
 	return wantarray ? ($m, $info) : $m;
 }
@@ -1316,6 +1317,7 @@ sub PDL::Complex::msyminv {
 	}
 	else{
 		$m->csytri($upper,$ipiv,$info);
+                $m = $m->xchg(1,2)->tritosym($upper, 0);
 	}
 	return wantarray ? ($m, $info) : $m;
 }

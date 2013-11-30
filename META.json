@@ -6,7 +6,7 @@
    "dynamic_config" : 1,
    "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.132140",
    "license" : [
-      "unknown"
+      "artistic_1"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
@@ -36,6 +36,9 @@
          }
       }
    },
-   "release_status" : "stable",
-   "version" : "0.07"
+   "release_status" : "testing",
+   "resources" : {
+      "homepage" : "http://pdl.perl.org/"
+   },
+   "version" : "0.07_01"
 }

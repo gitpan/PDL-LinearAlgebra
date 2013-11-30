@@ -1,9 +1,17 @@
 Revision history for Perl extension PDL::LinearAlgebra
 
+0.07_01  Sat Nov 30 18:17:48 EST 2013
+
+  * fixed bug in msyminv()
+  * global conversion from DOS to UNIX line endings
+  * explicitly specifying a Latin-1 encoding in the PODs
+  * removed debianization. This package is already in debian
+  * partial clean up of $VERSION specification
+
+
 0.07  Wed Nov 27 17:09:40 EST 2013
 
   * Official release with 1st PDL-2.007 support
-
 
 0.06_02  Wed Nov 27 14:19:17 EST 2013
 

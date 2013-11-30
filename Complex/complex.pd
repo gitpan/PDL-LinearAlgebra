@@ -2,7 +2,7 @@
 
 
 do('../Config');
-our $VERSION = '0.07';
+our $VERSION = '0.07_01';
 pp_setversion(qq{'$VERSION'});
 $VERSION = eval $VERSION;
 
@@ -115,6 +115,7 @@ use PDL::LinearAlgebra::Real;
 
 
 
+=encoding Latin-1
 =head1 NAME
 
 PDL::LinearAlgebra::Complex - PDL interface to the lapack linear algebra programming library (complex number)

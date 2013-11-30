@@ -1,4 +1,4 @@
-our $VERSION = '0.07';
+our $VERSION = '0.07_01';
 pp_setversion(qq{'$VERSION'});
 $VERSION = eval $VERSION;
 
@@ -106,6 +106,7 @@ use PDL::LinearAlgebra::Real qw //;
 use PDL::LinearAlgebra::Complex qw //;
 use strict;
 
+=encoding Latin-1
 =head1 NAME
 
 PDL::LinearAlgebra::Trans - Linear Algebra based transcendental functions for PDL
