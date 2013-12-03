@@ -3,7 +3,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
         'NAME' => 'PDL::LinearAlgebra',
         'VERSION_FROM' => 'LinearAlgebra.pm',
-        'LICENSE' => 'artistic',
+        'LICENSE' => 'artistic_2',
         'META_MERGE' => {
            resources => {
               homepage => 'http://pdl.perl.org/',
