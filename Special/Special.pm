@@ -12,12 +12,14 @@ no warnings 'uninitialized';
 @EXPORT_OK  = qw( mhilb mvander mpart mhankel mtoeplitz mtri mpascal mcompanion);
 %EXPORT_TAGS = (Func=>[@EXPORT_OK]);
 
-our $VERSION = '0.08';
+our $VERSION = '0.08_01';
 $VERSION = eval $VERSION;
 
 our @ISA = ( 'PDL::Exporter');
 
 use strict;
+
+=encoding Latin-1
 
 =head1 NAME
 
@@ -302,7 +304,7 @@ sub PDL::mpascal {
 		require PDL::Stat::Distributions;
 		$mat = xvals($m);
 		if ($n > 1){
-			return PDL::Stat::Distributions::choose($mat + $mat->dummy(0),$mat);		
+			return (PDL::Stat::Distributions::choose($mat + $mat->dummy(0),$mat))[0];		
 		}
 		else{
 			$mat = PDL::Stat::Distributions::choose($mat,$mat->dummy(0));
@@ -314,7 +316,7 @@ sub PDL::mpascal {
 			require PDL::GSLSF::GAMMA;
 			if ($n > 1){
 				$mat = xvals($m);
-				return PDL::GSLSF::GAMMA::gsl_sf_choose($mat + $mat->dummy(0),$mat);					
+				return (PDL::GSLSF::GAMMA::gsl_sf_choose($mat + $mat->dummy(0),$mat))[0];					
 			}else{
 				$mat = xvals($m, $m);
 				return (PDL::GSLSF::GAMMA::gsl_sf_choose($mat->tritosym,$mat->xchg(0,1)->tritosym))[0]->mtri($n);

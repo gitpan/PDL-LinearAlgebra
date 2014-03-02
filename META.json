@@ -1,10 +1,10 @@
 {
-   "abstract" : "unknown",
+   "abstract" : "PDL bindings to some BLAS and LAPACK library routines",
    "author" : [
-      "unknown"
+      "Chris Marshall <chm@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.132140",
+   "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.133380",
    "license" : [
       "artistic_2"
    ],
@@ -36,9 +36,9 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "homepage" : "http://pdl.perl.org/"
    },
-   "version" : "0.08"
+   "version" : "0.08_01"
 }
