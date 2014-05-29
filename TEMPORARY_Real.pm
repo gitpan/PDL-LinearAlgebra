@@ -1,76 +1,26 @@
-# TODO 'further details' ======= =========
-# If array not referenced, min 1.
 
+#
+# GENERATED WITH PDL::PP! Don't modify!
+#
+package PDL::LinearAlgebra::Real;
 
-do('../Config');
+@EXPORT_OK  = qw( PDL::PP gesvd PDL::PP gesdd PDL::PP ggsvd PDL::PP geev PDL::PP geevx PDL::PP ggev PDL::PP ggevx PDL::PP gees PDL::PP geesx PDL::PP gges PDL::PP ggesx PDL::PP syev PDL::PP syevd PDL::PP syevx PDL::PP syevr PDL::PP sygv PDL::PP sygvd PDL::PP sygvx PDL::PP gesv PDL::PP gesvx PDL::PP sysv PDL::PP sysvx PDL::PP posv PDL::PP posvx PDL::PP gels PDL::PP gelsy PDL::PP gelss PDL::PP gelsd PDL::PP gglse PDL::PP ggglm PDL::PP getrf PDL::PP getf2 PDL::PP sytrf PDL::PP sytf2 PDL::PP potrf PDL::PP potf2 PDL::PP getri PDL::PP sytri PDL::PP potri PDL::PP trtri PDL::PP trti2 PDL::PP getrs PDL::PP sytrs PDL::PP potrs PDL::PP trtrs PDL::PP latrs PDL::PP gecon PDL::PP sycon PDL::PP pocon PDL::PP trcon PDL::PP geqp3 PDL::PP geqrf PDL::PP orgqr PDL::PP ormqr PDL::PP gelqf PDL::PP orglq PDL::PP ormlq PDL::PP geqlf PDL::PP orgql PDL::PP ormql PDL::PP gerqf PDL::PP orgrq PDL::PP ormrq PDL::PP tzrzf PDL::PP ormrz PDL::PP gehrd PDL::PP orghr PDL::PP hseqr PDL::PP trevc PDL::PP tgevc PDL::PP gebal PDL::PP gebak PDL::PP lange PDL::PP lansy PDL::PP lantr PDL::PP gemm PDL::PP mmult PDL::PP crossprod PDL::PP syrk PDL::PP dot PDL::PP axpy PDL::PP nrm2 PDL::PP asum PDL::PP scal PDL::PP rot PDL::PP rotg PDL::PP lasrt PDL::PP lacpy PDL::PP laswp PDL::PP lamch PDL::PP labad PDL::PP tricpy PDL::PP cplx_eigen PDL::PP augment PDL::PP mstack PDL::PP charpol );
+%EXPORT_TAGS = (Func=>[@EXPORT_OK]);
 
-our $VERSION = '0.08_02';
-pp_setversion(qq{'$VERSION'});
-$VERSION = eval $VERSION;
-
+use PDL::Core;
 use PDL::Exporter;
+use DynaLoader;
 
 
-#TODO 
-# dot
 
-
-sub generate_code($){
-	if ($config{WITHOUT_THREAD}){
-	return '
-		#if 0
-		threadloop%{
-		%}
-		#endif'.$_[0];
-	}
-	else{
-		return $_[0];
-	}
-}
-
-if ($config{CBLAS}){
-	pp_addhdr('#include <cblas.h>');
-}
-
-if ($^O =~ /MSWin/) {
-pp_addhdr('
-#include <float.h>
-');
-}
+   $PDL::LinearAlgebra::Real::VERSION = '0.08_02';
+   @ISA    = ( 'PDL::Exporter','DynaLoader' );
+   push @PDL::Core::PP, __PACKAGE__;
+   bootstrap PDL::LinearAlgebra::Real $VERSION;
 
 
 
 
-pp_addhdr('
-#include <math.h>
-
-#if defined(PDL_CORE_VERSION) && PDL_CORE_VERSION < 10
-typedef PDL_Long PDL_Indx;
-#endif
-
-/* avoid annoying warnings */
-typedef PDL_Long logical;
-typedef PDL_Long integer;
-typedef PDL_Long ftnlen;
-
-#ifdef __cplusplus
-typedef logical (*L_fp)(...);
-#else
-typedef logical (*L_fp)();
-#endif
-
-#ifndef min
-#define min(a,b) ((a) <= (b) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a,b) ((a) >= (b) ? (a) : (b))
-#endif
-
-static integer c_zero = 0;
-static integer c_nine = 9;
-');
-
-pp_addpm({At=>'Top'},<<'EOD');
 use strict;
 
 
@@ -118,112 +68,30 @@ Blas vector routine use increment.
 This module provides an interface to parts of the real lapack library.
 These routines accept either float or double piddles.
 
-EOD
-
-
-
-pp_def("gesvd",
-       HandleBad => 0,
-	RedoDimsCode => '$SIZE(r) =  $PDL(A)->ndims > 1 ? min($PDL(A)->dims[0], $PDL(A)->dims[1]) : 1;',
-	Pars => '[io,phys]A(m,n); int jobu(); int jobvt(); [o,phys]s(r); [o,phys]U(p,q); [o,phys]VT(s,t); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-
-
-		
 
 
 
 
-             types(F) %{
 
-		extern int sgesvd_(char *jobu, char *jobvt, integer *m, integer *n, float *a,
-		integer *lda, float *s, float *u, int *ldu,
-		float *vt, integer *ldvt, float *work, integer *lwork,
-		integer *info);
 
-		float tmp_work;
-             %}
-             types(D) %{
-
-		extern int dgesvd_(char *jobz,char *jobvt, integer *m, integer *n,
-		double *a, integer *lda, double *s, double *u, int *ldu,
-		double *vt, integer *ldvt, double *work, integer *lwork,
-		integer *info);
-
-		double tmp_work;
-             %}
-		integer lwork = -1;
-		char trau, travt;
-
-		switch ($jobu())
-		{
-			case 1: trau = \'A\';
-				break;
-			case 2: trau = \'S\';
-				break;
-			case 3: trau = \'O\';
-				break;
-			default: trau = \'N\';
-		}
-		switch ($jobvt())
-		{
-			case 1: travt = \'A\';
-				break;
-			case 2: travt = \'S\';
-				break;
-			case 3: travt = \'O\';
-				break;
-			default: travt = \'N\';
-		}
+=head1 FUNCTIONS
 
 
 
-		$TFD(sgesvd_,dgesvd_)(
-		&trau,
-		&travt,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(s),
-		$P(U),
-		&(integer){$PRIV(__p_size)},
-		$P(VT),
-		&(integer){$PRIV(__s_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+=cut
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgesvd_,dgesvd_)(
-		&trau,
-		&travt,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(s),
-		$P(U),
-		&(integer){$PRIV(__p_size)},
-		$P(VT),
-		&(integer){$PRIV(__s_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
-',
-      Doc => '
+
+
+
+=head2 gesvd
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); int jobu(); int jobvt(); [o,phys]s(r); [o,phys]U(p,q); [o,phys]VT(s,t); int [o,phys]info())
+
+
 
 =for ref
 
@@ -232,7 +100,7 @@ M-by-N matrix A.
 
 The SVD is written
 
- A = U * SIGMA * V\'
+ A = U * SIGMA * V'
 
 where SIGMA is an M-by-N matrix which is zero except for its
 min(m,n) diagonal elements, U is an M-by-M orthogonal matrix, and
@@ -241,7 +109,7 @@ are the singular values of A; they are real and non-negative, and
 are returned in descending order.  The first min(m,n) columns of
 U and V are the left and right singular vectors of A.
 
-Note that the routine returns VT = V\', not V.
+Note that the routine returns VT = V', not V.
 
     jobu:   Specifies options for computing all or part of the matrix U:
             = 0:  no columns of U (no left singular vectors) are
@@ -254,13 +122,13 @@ Note that the routine returns VT = V\', not V.
 
 
     jobvt:  Specifies options for computing all or part of the matrix
-            V\':
-            = 0:  no rows of V\' (no right singular vectors) are
+            V':
+            = 0:  no rows of V' (no right singular vectors) are
                     computed.
-            = 1:  all N rows of V\' are returned in the array VT;
-            = 2:  the first min(m,n) rows of V\' (the right singular
+            = 1:  all N rows of V' are returned in the array VT;
+            = 2:  the first min(m,n) rows of V' (the right singular
                     vectors) are returned in the array VT;
-            = 3:  the first min(m,n) rows of V\' (the right singular
+            = 3:  the first min(m,n) rows of V' (the right singular
                     vectors) are overwritten on the array A;
 
             jobvt and jobu cannot both be 3.
@@ -271,7 +139,7 @@ Note that the routine returns VT = V\', not V.
                             columns of U (the left singular vectors,
                             stored columnwise);
             if jobvt = 3, A is overwritten with the first min(m,n)
-                            rows of V\' (the right singular vectors,
+                            rows of V' (the right singular vectors,
                             stored rowwise);
             if jobu != 3 and jobvt != 3, the contents of A
                             are destroyed.
@@ -285,9 +153,9 @@ Note that the routine returns VT = V\', not V.
             Min size  = [1,1].
 
     VT:     If jobvt = 1, VT contains the N-by-N orthogonal matrix
-            V\';
+            V';
             if jobvt = 2, VT contains the first min(m,n) rows of
-            V\' (the right singular vectors, stored rowwise);
+            V' (the right singular vectors, stored rowwise);
             if jobvt = 0 or 3, VT is not referenced.
             Min size  = [1,1].
 
@@ -306,132 +174,56 @@ Note that the routine returns VT = V\', not V.
  $info = pdl(long, 0);
  gesvd($a, 2, 2, $s , $u, $vt, $info);
 
-');
-pp_def("gesdd",
-       HandleBad => 0,
-	RedoDimsCode => '$SIZE(r) =  $PDL(A)->ndims > 1 ? min($PDL(A)->dims[0], $PDL(A)->dims[1]) : 1;',
-	Pars => '[io,phys]A(m,n); int job(); [o,phys]s(r); [o,phys]U(p,q); [o,phys]VT(s,t); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-                integer lwork;
-		integer *iwork;
-		integer smlsiz;
-		char tra;
-             types(F) %{
 
-		extern int sgesdd_(char *jobz, integer *m, integer *n, float *
-		a, integer *lda, float *s, float *u, int *ldu,
-		float *vt, integer *ldvt, float *work, integer *lwork,
-		integer *iwork, integer *info);
 
-		float tmp_work;
-             %}
-             types(D) %{
+=for bad
 
-		extern int dgesdd_(char *jobz, integer *m, integer *n, double *
-		a, integer *lda, double *s, double *u, int *ldu,
-		double *vt, integer *ldvt, double *work, integer *lwork,
-		integer *iwork, integer *info);
+gesvd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		double tmp_work;
-             %}
-		
-		lwork = ($PRIV(__m_size) < $PRIV(__n_size)) ? 8*$PRIV(__m_size) : 8*$PRIV(__n_size);
-		iwork = (integer *)malloc(lwork * sizeof(integer));
-		lwork = -1;
 
-		switch ($job())
-		{
+=cut
 
-			case 1: tra = \'A\';
-				break;
-			case 2: tra = \'S\';
-				break;
-			case 3: tra = \'O\';
-				break;
-			default: tra = \'N\';
-				break;
 
-		}
 
-		$TFD(sgesdd_,dgesdd_)(
-		&tra,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(s),
-		$P(U),
-		&(integer){$PRIV(__p_size)},
-		$P(VT),
-		&(integer){$PRIV(__s_size)},
-		&tmp_work,
-		&lwork,
-		iwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work;
-			if (tra == \'N\'){
-				smlsiz = ilaenv_(&c_nine, "SGESDD", " ", &c_zero, &c_zero, &c_zero, &c_zero, (ftnlen)6, (ftnlen)1);
-				lwork = max(14*min($PRIV(__m_size),$PRIV(__n_size))+4, 10*min($PRIV(__m_size),
-					$PRIV(__n_size))+2+ smlsiz*(smlsiz+8)) + max($PRIV(__m_size),$PRIV(__n_size));
-			}
-			work = (float *) malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
-			double *work;
-			if (tra == \'N\'){
-				smlsiz = ilaenv_(&c_nine, "DGESDD", " ", &c_zero, &c_zero, &c_zero, &c_zero, (ftnlen)6, (ftnlen)1);
-				lwork = max(14*min($PRIV(__m_size),$PRIV(__n_size))+4, 10*min($PRIV(__m_size),
-					$PRIV(__n_size))+2+ smlsiz*(smlsiz+8)) + max($PRIV(__m_size),$PRIV(__n_size));
-			}
-			work = (double *) malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgesdd_,dgesdd_)(
-		&tra,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(s),
-		$P(U),
-		&(integer){$PRIV(__p_size)},
-		$P(VT),
-		&(integer){$PRIV(__s_size)},
-		work,
-		&lwork,
-		iwork,
-		$P(info));
-		free(work);
-		}
-		free(iwork);
-',
-      Doc => '
+
+
+*gesvd = \&PDL::gesvd;
+
+
+
+
+
+=head2 gesdd
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); int job(); [o,phys]s(r); [o,phys]U(p,q); [o,phys]VT(s,t); int [o,phys]info())
+
+
 
 =for ref
 
 Computes the singular value decomposition (SVD) of a real
 M-by-N matrix A.
 
-This routine use the Coppen\'s divide and conquer algorithm.
+This routine use the Coppen's divide and conquer algorithm.
 It is much faster than the simple driver for large matrices, but uses more workspace.
 
     job:    Specifies options for computing all or part of matrix:
 
-            = 0:  no columns of U or rows of V\' are computed;
-	    = 1:  all M columns of U and all N rows of V\' are
+            = 0:  no columns of U or rows of V' are computed;
+	    = 1:  all M columns of U and all N rows of V' are
                     returned in the arrays U and VT;
             = 2:  the first min(M,N) columns of U and the first
-                    min(M,N) rows of V\' are returned in the arrays U
+                    min(M,N) rows of V' are returned in the arrays U
                     and VT;
             = 3:  If M >= N, the first N columns of U are overwritten
-                    on the array A and all rows of V\' are returned in
+                    on the array A and all rows of V' are returned in
                     the array VT;
                     otherwise, all columns of U are returned in the
-                    array U and the first M rows of V\' are overwritten
+                    array U and the first M rows of V' are overwritten
                     on the array A.
 
     A:      On entry, the M-by-N matrix A.
@@ -440,7 +232,7 @@ It is much faster than the simple driver for large matrices, but uses more works
                             of U (the left singular vectors, stored
                             columnwise) if M >= N;
                             A is overwritten with the first M rows
-                            of V\' (the right singular vectors, stored
+                            of V' (the right singular vectors, stored
                             rowwise) otherwise.
             if job != 3, the contents of A are destroyed.
 
@@ -454,9 +246,9 @@ It is much faster than the simple driver for large matrices, but uses more works
             Min size  = [1,1].
 
     VT:     If job = 1 or job = 3 and M >= N, VT contains the
-            N-by-N orthogonal matrix V\';
+            N-by-N orthogonal matrix V';
             if job = 2, VT contains the first min(M,N) rows of
-            V\' (the right singular vectors, stored rowwise);
+            V' (the right singular vectors, stored rowwise);
             if job = 3 and M < N, or job = 0, VT is not referenced.
             Min size  = [1,1].
 
@@ -476,98 +268,46 @@ It is much faster than the simple driver for large matrices, but uses more works
  $info = long (0);
  gesdd($a, 1, $s , $u, $vt, $info);
 
-');
 
-pp_def("ggsvd",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); int jobu(); int jobv(); int jobq(); [io,phys]B(p,n); int [o,phys]k(); int [o,phys]l();[o,phys]alpha(n);[o,phys]beta(n); [o,phys]U(q,r); [o,phys]V(s,t); [o,phys]Q(u,v); int [o,phys]iwork(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		char pjobu = \'N\';
-		char pjobv = \'N\';		
-		char pjobq = \'N\';
 
-             types(F) %{
+=for bad
 
-		extern int sggsvd_(char *jobu, char *jobv, char *jobq, integer *m, 
-		integer *n, integer *p, integer *k, integer *l, float *a, 
-		integer *lda, float *b, integer *ldb, float *alpha, 
-		float *beta, float *u, integer *ldu, float *v, integer 
-		*ldv, float *q, integer *ldq, float *work, integer *iwork, 
-		integer *info);
+gesdd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work;
-             %}
-             types(D) %{
 
-		extern int dggsvd_(char *jobu, char *jobv, char *jobq, integer *m, 
-		integer *n, integer *p, integer *k, integer *l, double *a, 
-		integer *lda, double *b, integer *ldb, double *alpha, 
-		double *beta, double *u, integer *ldu, double *v, integer 
-		*ldv, double *q, integer *ldq, double *work, integer *iwork, 
-		integer *info);
+=cut
 
-		double *work;
-             %}
-		integer lwork = ($SIZE (m) < $SIZE (n)) ? $SIZE (n): $SIZE (m);
 
-		if ($SIZE (p) > lwork)
-			lwork = $SIZE (p);
-		
-		types(F) %{
-			work = (float *)malloc((3*lwork +  $SIZE (n))*  sizeof(float));
-		%}
-		types(D) %{
-			work = (double *)malloc((3*lwork +  $SIZE (n)) *  sizeof(double));
-		%}		
 
-		if ($jobu())
-			pjobu = \'U\';
-		if ($jobv())
-			pjobv = \'V\';
-		if ($jobq())
-			pjobq = \'Q\';
 
-		
-		$TFD(sggsvd_,dggsvd_)(
-		&pjobu,
-		&pjobv,
-		&pjobq,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__p_size)},
-		$P(k),
-		$P(l),
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(alpha),
-		$P(beta),
-		$P(U),
-		&(integer){$PRIV(__q_size)},
-		$P(V),
-		&(integer){$PRIV(__s_size)},
-		$P(Q),
-		&(integer){$PRIV(__u_size)},
-		work,
-		$P(iwork),
-		$P(info));
-		free(work);
-',
-      Doc => '
+
+
+*gesdd = \&PDL::gesdd;
+
+
+
+
+
+=head2 ggsvd
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); int jobu(); int jobv(); int jobq(); [io,phys]B(p,n); int [o,phys]k(); int [o,phys]l();[o,phys]alpha(n);[o,phys]beta(n); [o,phys]U(q,r); [o,phys]V(s,t); [o,phys]Q(u,v); int [o,phys]iwork(n); int [o,phys]info())
+
+
 
 =for ref
 
 Computes the generalized singular value decomposition (GSVD)
 of an M-by-N real matrix A and P-by-N real matrix B:
 
-	U\'*A*Q = D1*( 0 R ),    V\'*B*Q = D2*( 0 R )
+	U'*A*Q = D1*( 0 R ),    V'*B*Q = D2*( 0 R )
 
-	where U, V and Q are orthogonal matrices, and Z\' is the transpose
+	where U, V and Q are orthogonal matrices, and Z' is the transpose
 	of Z.
 
-Let K+L = the effective numerical rank of the matrix (A\',B\')\',
+Let K+L = the effective numerical rank of the matrix (A',B')',
 then R is a K+L-by-K+L nonsingular upper triangular matrix, D1 and
 D2 are M-by-(K+L) and P-by-(K+L) "diagonal" matrices and of the
 following structures, respectively:
@@ -627,17 +367,17 @@ transformation matrices U, V and Q.
 In particular, if B is an N-by-N nonsingular matrix, then the GSVD of
 A and B implicitly gives the SVD of A*inv(B):
 
-                         A*inv(B) = U*(D1*inv(D2))*V\'.
+                         A*inv(B) = U*(D1*inv(D2))*V'.
 
-If ( A\',B\')\' has orthonormal columns, then the GSVD of A and B is
+If ( A',B')' has orthonormal columns, then the GSVD of A and B is
 also equal to the CS decomposition of A and B. Furthermore, the GSVD
 can be used to derive the solution of the eigenvalue problem:
 
-                         A\'*A x = lambda* B\'*B x.
+                         A'*A x = lambda* B'*B x.
 
 In some literature, the GSVD of A and B is presented in the form
 
-                     U\'*A*X = ( 0 D1 ),   V\'*B*X = ( 0 D2 )
+                     U'*A*X = ( 0 D1 ),   V'*B*X = ( 0 D2 )
                      where U and V are orthogonal and X is nonsingular, D1 and D2 are "diagonal".
 
 The former GSVD form can be converted to the latter
@@ -661,7 +401,7 @@ form by taking the nonsingular matrix X as
     k:
     l:      On exit, k and l specify the dimension of the subblocks
             described in the Purpose section.
-            k + l = effective numerical rank of (A\',B\')\'.
+            k + l = effective numerical rank of (A',B')'.
 
     A:      On entry, the M-by-N matrix A.
             On exit, A contains the triangular matrix R, or part of R.
@@ -723,83 +463,34 @@ form by taking the nonsingular matrix X as
  $info = null;
  ggsvd($A,1,1,1,$B,$k,$l,$alpha, $beta,$U, $V, $Q, $iwork,$info);
 
-');
 
-pp_def("geev",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int jobvl(); int jobvr(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vl(m,m); [o,phys]vr(p,p); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		char jvl = \'N\';
-		char jvr = \'N\';
-             types(F) %{
-		extern int sgeev_(char *jobvl, char *jobvr, integer *n, float *a,
-		integer *lda, float *wr, float *wi, float *vl, integer *ldvl, float *vr,
-		integer *ldvr, float *work, integer *lwork, integer *info);
+=for bad
 
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgeev_(char *jobvl, char *jobvr, integer *n, double *
-		a, integer *lda, double *wr, double *wi, double *vl,
-		integer *ldvl, double *vr, integer *ldvr, double *work,
-		integer *lwork, integer *info);
+ggsvd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		double tmp_work;
-             %}
-		integer lwork = -1;
 
-		if ($jobvl())
-			jvl = \'V\';
-		if ($jobvr())
-			jvr = \'V\';
+=cut
 
-		$TFD(sgeev_,dgeev_)(
-		&jvl,
-		&jvr,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(wr),
-		$P(wi),
-		$P(vl),
-		&(integer){$PRIV(__m_size)},
-		$P(vr),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgeev_,dgeev_)(
-		&jvl,
-		&jvr,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(wr),
-		$P(wi),
-		$P(vl),
-		&(integer){$PRIV(__m_size)},
-		$P(vr),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
-',
-      Doc => '
+
+
+*ggsvd = \&PDL::ggsvd;
+
+
+
+
+
+=head2 geev
+
+=for sig
+
+  Signature: ([phys]A(n,n); int jobvl(); int jobvr(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vl(m,m); [o,phys]vr(p,p); int [o,phys]info())
+
+
 
 =for ref
 
@@ -873,139 +564,34 @@ equal to 1 and largest component real.
  $info = null;
  geev($a, 1, 1, $wr, $wi, $vl, $vr, $info);
 
-');
-
-pp_def("geevx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int jobvl(); int jobvr(); int balance(); int sense(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vl(m,m); [o,phys]vr(p,p); int [o,phys]ilo(); int [o,phys]ihi(); [o,phys]scale(n); [o,phys]abnrm(); [o,phys]rconde(q); [o,phys]rcondv(r); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+geev ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		char jvl = \'N\';
-		char jvr = \'N\';
-		char balanc, sens;
-		integer *iwork;
-		integer lwork = -1;
-             types(F) %{
-		extern int sgeevx_(char *balanc, char *jobvl, char *jobvr, char *
-		sense, integer *n, float *a, integer *lda, float *wr,
-		float *wi, float *vl, integer *ldvl, float *vr,
-		integer *ldvr, integer *ilo, integer *ihi, float *scale,
-		float *abnrm, float *rconde, float *rcondv, float
-		*work, integer *lwork, integer *iwork, integer *info);
 
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgeevx_(char *balanc, char *jobvl, char *jobvr, char *
-		sense, integer *n, double *a, integer *lda, double *wr,
-		double *wi, double *vl, integer *ldvl, double *vr,
-		integer *ldvr, integer *ilo, integer *ihi, double *scale,
-		double *abnrm, double *rconde, double *rcondv, double
-		*work, integer *lwork, integer *iwork, integer *info);
 
-		double tmp_work;
-             %}
 
-		if ($jobvl())
-			jvl = \'V\';
-		if ($jobvr())
-			jvr = \'V\';
+*geev = \&PDL::geev;
 
-		switch ($balance())
-		{
-			case 1: balanc = \'P\';
-				break;
-			case 2: balanc = \'S\';
-				break;
-			case 3: balanc = \'B\';
-				break;
-			default: balanc = \'N\';
-		}
-		switch ($sense())
-		{
-			case 1: sens = \'E\';
-				break;
-			case 2: sens = \'V\';
-				iwork  = (integer *)malloc ((2 * $PRIV(__n_size) -2)* sizeof (integer));
-				break;
-			case 3: sens = \'B\';
-				iwork  = (integer *)malloc ((2 * $PRIV(__n_size) -2)* sizeof (integer));
-				break;
-			default: sens = \'N\';
-		}
 
-		$TFD(sgeevx_,dgeevx_)(
-		&balanc,
-		&jvl,
-		&jvr,
-		&sens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(wr),
-		$P(wi),
-		$P(vl),
-		&(integer){$PRIV(__m_size)},
-		$P(vr),
-		&(integer){$PRIV(__p_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(scale),
-		$P(abnrm),
-		$P(rconde),
-		$P(rcondv),
-		&tmp_work,
-		&lwork,
-		iwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgeevx_,dgeevx_)(
-		&balanc,
-		&jvl,
-		&jvr,
-		&sens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(wr),
-		$P(wi),
-		$P(vl),
-		&(integer){$PRIV(__m_size)},
-		$P(vr),
-		&(integer){$PRIV(__p_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(scale),
-		$P(abnrm),
-		$P(rconde),
-		$P(rcondv),
-		work,
-		&lwork,
-		iwork,
-		$P(info));
-		free(work);
-		}
-		if ($sense() == 2 || $sense() == 3)
-			free(iwork);
-',
-      Doc => '
+=head2 geevx
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int jobvl(); int jobvr(); int balance(); int sense(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vl(m,m); [o,phys]vr(p,p); int [o,phys]ilo(); int [o,phys]ihi(); [o,phys]scale(n); [o,phys]abnrm(); [o,phys]rconde(q); [o,phys]rcondv(r); int [o,phys]info())
+
+
 
 =for ref
 
@@ -1040,7 +626,7 @@ reciprocal condition numbers correspond to the balanced matrix.
 Permuting rows and columns will not change the condition numbers
 (in exact arithmetic) but diagonal scaling will.  For further
 explanation of balancing, see section 4.10.2 of the LAPACK
-Users\' Guide.
+Users' Guide.
 
     Arguments
     =========
@@ -1157,90 +743,34 @@ Users\' Guide.
  $info = null;
  geevx($a, 1,1,3,3,$wr, $wi, $vl, $vr, $ilo, $ihi, $scale, $abnrm,$rconde, $rcondv, $info);
 
-');
 
 
-pp_def("ggev",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int jobvl();int jobvr();[phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VL(m,m);[o,phys]VR(p,p);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-		integer lwork = -1;
-		char pjobvl = \'N\', pjobvr = \'N\';
+geevx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-             types(F) %{
-		extern int sggev_(char *jobvl, char *jobvr, integer *n, float *
-		a, integer *lda, float *b, integer *ldb, float *alphar,
-		float *alphai, float *beta, float *vl, integer *ldvl,
-		float *vr, integer *ldvr, float *work, integer *lwork,
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dggev_(char *jobvl, char *jobvr, integer *n, double *
-		a, integer *lda, double *b, integer *ldb, double *alphar,
-		double *alphai, double *beta, double *vl, integer *ldvl,
-		double *vr, integer *ldvr, double *work, integer *lwork,
-		integer *info);
-		double tmp_work;
-             %}
-		if ($jobvl())
-			pjobvl = \'V\';
-		if ($jobvr())
-			pjobvr = \'V\';
 
-		$TFD(sggev_,dggev_)(
-		&pjobvl,
-		&pjobvr,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VL),
-		&(integer){$PRIV(__m_size)},
-		$P(VR),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+=cut
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
 
-		$TFD(sggev_,dggev_)(
-		&pjobvl,
-		&pjobvr,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VL),
-		&(integer){$PRIV(__m_size)},
-		$P(VR),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+*geevx = \&PDL::geevx;
+
+
+
+
+
+=head2 ggev
+
+=for sig
+
+  Signature: ([phys]A(n,n); int jobvl();int jobvr();[phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VL(m,m);[o,phys]VR(p,p);int [o,phys]info())
+
+
 
 =for ref
 
@@ -1338,150 +868,34 @@ of (A,B) satisfies
  $vr = zeroes(5,5);
  ggev($a, 1, 1, $b, $alphar, $alphai, $beta, $vl, $vr, ($info=null));
 
-');
 
-pp_def("ggevx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);int balanc();int jobvl();int jobvr();int sense();[io,phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VL(m,m);[o,phys]VR(p,p);int [o,phys]ilo();int [o,phys]ihi();[o,phys]lscale(n);[o,phys]rscale(n);[o,phys]abnrm();[o,phys]bbnrm();[o,phys]rconde(r);[o,phys]rcondv(s);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		integer lwork = -1, *iwork, *bwork;
-		char pjobvl = \'N\', pjobvr = \'N\';
-		char pbalanc, psens;
+=for bad
 
-             types(F) %{
-		int sggevx_(char *balanc, char *jobvl, char *jobvr, char *
-		sense, integer *n, float *a, integer *lda, float *b,
-		integer *ldb, float *alphar, float *alphai, float *
-		beta, float *vl, integer *ldvl, float *vr, integer *ldvr,
-		integer *ilo, integer *ihi, float *lscale, float *rscale,
-		float *abnrm, float *bbnrm, float *rconde, float *
-		rcondv, float *work, integer *lwork, integer *iwork, logical *
-		bwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dggevx_(char *balanc, char *jobvl, char *jobvr, char *
-		sense, integer *n, double *a, integer *lda, double *b,
-		integer *ldb, double *alphar, double *alphai, double *
-		beta, double *vl, integer *ldvl, double *vr, integer *ldvr,
-		integer *ilo, integer *ihi, double *lscale, double *rscale,
-		double *abnrm, double *bbnrm, double *rconde, double *
-		rcondv, double *work, integer *lwork, integer *iwork, logical *
-		bwork, integer *info);
-		double tmp_work;
-             %}
-		if ($jobvl())
-			pjobvl = \'V\';
-		if ($jobvr())
-			pjobvr = \'V\';
+ggev ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		switch ($balanc())
-		{
-			case 1: pbalanc = \'P\';
-				break;
-			case 2: pbalanc = \'S\';
-				break;
-			case 3: pbalanc = \'B\';
-				break;
-			default: pbalanc = \'N\';
-		}
-		switch ($sense())
-		{
-			case 1: psens = \'E\';
-				bwork = (integer *)malloc($SIZE(n) *  sizeof(integer));
-				break;
-			case 2: psens = \'V\';
-				iwork = (integer *)malloc(($SIZE(n) + 6) *  sizeof(integer));
-				bwork = (integer *)malloc($SIZE(n) *  sizeof(integer));
-				break;
-			case 3: psens = \'B\';
-				iwork = (integer *)malloc(($SIZE(n) + 6) *  sizeof(integer));
-				bwork = (integer *)malloc($SIZE(n) *  sizeof(integer));
-				break;
-			default: psens = \'N\';
-				iwork = (integer *)malloc(($SIZE(n) + 6) *  sizeof(integer));
-		}
 
-		$TFD(sggevx_,dggevx_)(
-		&pbalanc,
-		&pjobvl,
-		&pjobvr,
-		&psens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VL),
-		&(integer){$PRIV(__m_size)},
-		$P(VR),
-		&(integer){$PRIV(__p_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(lscale),
-		$P(rscale),
-		$P(abnrm),
-		$P(bbnrm),
-		$P(rconde),
-		$P(rcondv),
-		&tmp_work,
-		&lwork,
-		iwork,
-		bwork,
-		$P(info));
+=cut
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
 
-		$TFD(sggevx_,dggevx_)(
-		&pbalanc,
-		&pjobvl,
-		&pjobvr,
-		&psens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VL),
-		&(integer){$PRIV(__m_size)},
-		$P(VR),
-		&(integer){$PRIV(__p_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(lscale),
-		$P(rscale),
-		$P(abnrm),
-		$P(bbnrm),
-		$P(rconde),
-		$P(rcondv),
-		work,
-		&lwork,
-		iwork,
-		bwork,
-		$P(info));
-		free(work);
-		}
-		if ($sense())
-			free(bwork);
-		if ($sense() != 1)
-			free(iwork);
-',
-      Doc => '
+
+
+
+
+*ggev = \&PDL::ggev;
+
+
+
+
+
+=head2 ggevx
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);int balanc();int jobvl();int jobvr();int sense();[io,phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VL(m,m);[o,phys]VR(p,p);int [o,phys]ilo();int [o,phys]ihi();[o,phys]lscale(n);[o,phys]rscale(n);[o,phys]abnrm();[o,phys]bbnrm();[o,phys]rconde(r);[o,phys]rcondv(s);int [o,phys]info())
+
+
 
 =for ref
 
@@ -1523,7 +937,7 @@ as close in norm as possible. The computed reciprocal condition
 numbers correspond to the balanced matrix. Permuting rows and columns
 will not change the condition numbers (in exact arithmetic) but
 diagonal scaling will.  For further explanation of balancing, see
-section 4.11.1.2 of LAPACK Users\' Guide.
+section 4.11.1.2 of LAPACK Users' Guide.
 
 An approximate error bound on the chordal distance between the i-th
 computed generalized eigenvalue w and the corresponding exact
@@ -1537,7 +951,7 @@ eigenvector vl(i) or vr(i) is given by
 	EPS * norm(abnrm, bbnrm) / DIF(i).
 
 For further explanation of the reciprocal condition numbers rconde
-and rcondv, see section 4.11 of LAPACK User\'s Guide.
+and rcondv, see section 4.11 of LAPACK User's Guide.
 
 
     Arguments
@@ -1687,212 +1101,40 @@ and rcondv, see section 4.11 of LAPACK User\'s Guide.
  ggevx($a, 3, 1, 1, 3, $b, $alphar, $alphai, $beta, $vl, $vr,
  $ilo, $ihi, $lscale, $rscale, $abnrm, $bbnrm, $rconde,$rcondv,($info=null));
 
-');
 
 
-pp_addhdr('
-static SV*   fselect_function;
-PDL_Long fselection_wrapper(float *wr, float *wi)
-{
-	dSP ;
-	long  choice;
-	int retval;
+=for bad
 
-	ENTER ;
-	SAVETMPS ;
-
-	PUSHMARK(sp) ;
-	XPUSHs(sv_2mortal(newSVnv((double ) *wr)));
-	XPUSHs(sv_2mortal(newSVnv((double ) *wi)));
-	PUTBACK ;
-
-	retval = perl_call_sv(fselect_function, G_SCALAR);
-
-	SPAGAIN;
-
-	if (retval != 1)
-		croak("Error calling perl function\n");
-
-	choice = (long ) POPl ;  /* Return value */
-
-	PUTBACK ;
-	FREETMPS ;
-	LEAVE ;
-
-	return choice;
-}
-
-static SV*   dselect_function;
-PDL_Long dselection_wrapper(double *wr, double *wi)
-{
-	dSP ;
-	long  choice;
-	int retval;
-
-	ENTER ;
-	SAVETMPS ;
-
-	PUSHMARK(sp) ;
-	XPUSHs(sv_2mortal(newSVnv(*wr)));
-	XPUSHs(sv_2mortal(newSVnv(*wi)));
-	PUTBACK ;
-
-	retval = perl_call_sv(dselect_function, G_SCALAR);
-
-	SPAGAIN;
-
-	if (retval != 1)
-		croak("Error calling perl function\n");
-
-	choice = (long ) POPl ;  /* Return value */
-
-	PUTBACK ;
-	FREETMPS ;
-	LEAVE ;
-
-	return choice;
-}
+ggevx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
 
-');
+=cut
 
 
-pp_def("gees",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int jobvs(); int sort(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vs(p,p); int [o,phys]sdim(); int [o,phys]info()',
-	OtherPars => "SV* select_func" ,
-	GenericTypes => [F,D],
-	Code => generate_code '
-
-		char jvs = \'N\';
-		char psort = \'N\';
-		integer *bwork;
-		integer lwork = -1;
-
-             types(F) %{
-		extern int sgees_(char *jobvs, char *sort, L_fp select, integer *n,
-		float *a, integer *lda, integer *sdim, float *wr,
-		float *wi, float *vs, integer *ldvs, float *work,
-		integer *lwork, integer *bwork, integer *info);
-		float tmp_work;
-		fselect_function    = $PRIV(select_func);
-             %}
-             types(D) %{
-		extern int dgees_(char *jobvs, char *sort, L_fp select, integer *n,
-		double *a, integer *lda, integer *sdim, double *wr,
-		double *wi, double *vs, integer *ldvs, double *work,
-		integer *lwork, integer *bwork, integer *info);
-		double tmp_work;
-		dselect_function    = $PRIV(select_func);
-             %}
 
 
-		if ($jobvs())
-			jvs = \'V\';
-		if ($sort()){
-			psort = \'S\';
-			bwork  = (integer * )  malloc ($PRIV(__n_size) * sizeof (integer));
-		}
 
-             types(F) %{
-		sgees_(
-		&jvs,
-		&psort,
-		fselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(wr),
-		$P(wi),
-		$P(vs),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
-	     types(D) %{
-		dgees_(
-		&jvs,
-		&psort,
-		dselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(wr),
-		$P(wi),
-		$P(vs),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
-	
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+*ggevx = \&PDL::ggevx;
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-     	types(F) %{
-		sgees_(
-		&jvs,
-		&psort,
-		fselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(wr),
-		$P(wi),
-		$P(vs),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
 
-    	types(D) %{
-		dgees_(
-		&jvs,
-		&psort,
-		dselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(wr),
-		$P(wi),
-		$P(vs),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
 
-		free(work);
-		}
 
-		if ($sort())
-			free(bwork);
-',
-      Doc => '
+=head2 gees
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int jobvs(); int sort(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vs(p,p); int [o,phys]sdim(); int [o,phys]info(); SV* select_func)
+
+
 
 =for ref
 
 Computes for an N-by-N real nonsymmetric matrix A, the
 eigenvalues, the real Schur form T, and, optionally, the matrix of
-Schur vectors Z.  This gives the Schur factorization A = Z*T*Z\'.
+Schur vectors Z.  This gives the Schur factorization A = Z*T*Z'.
 
 Optionally, it also orders the eigenvalues on the diagonal of the
 real Schur form so that selected eigenvalues are at the top left.
@@ -1985,139 +1227,40 @@ The eigenvalues of such a block are a +- sqrt(bc).
  $info = null;
  gees($A, 1,1, $wr, $wi, $vs, $sdim, $info,\&select_function);
 
-');
-
-pp_def("geesx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int jobvs(); int sort(); int sense(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vs(p,p); int [o,phys]sdim(); [o,phys]rconde();[o,phys]rcondv(); int [o,phys]info()',
-	OtherPars => "SV* select_func" ,
-	GenericTypes => [F,D],
-	Code => generate_code '
-
-		char jvs = \'N\';
-		char psort = \'N\';
-		integer *bwork;
-		integer lwork = 0;
-		integer liwork = 1;
-		integer *iwork;
-		char sens;
-
-             types(F) %{
-		extern int sgeesx_(char *jobvs, char *sort, L_fp select, char * sense,
-		integer *n, float *a, integer *lda, integer *sdim, float *wr,
-		float *wi, float *vs, integer *ldvs, float *rconde, float *rcondv,
-		float *work, integer *lwork, integer *iwork, integer *liwork,
-		integer *bwork, integer *info);
-		float *work;
-		fselect_function    = $PRIV(select_func);
-             %}
-             types(D) %{
-		extern int dgeesx_(char *jobvs, char *sort, L_fp select, char * sense,
-		integer *n, double *a, integer *lda, integer *sdim, double *wr,
-		double *wi, double *vs, integer *ldvs, double *rconde, double *rcondv,
-		double *work, integer *lwork, integer *iwork, integer *liwork,
-		integer *bwork, integer *info);
-		double *work;
-		dselect_function    = $PRIV(select_func);
-             %}
 
 
-		if ($jobvs())
-			jvs = \'V\';
-		if ($sort()){
-			psort = \'S\';
-			bwork  = (integer * )  malloc ($PRIV(__n_size) * sizeof (integer));
-		}
+=for bad
 
-		switch ($sense())
-		{
-			case 1: sens = \'E\';
-				lwork  = (integer ) ($PRIV(__n_size) + $PRIV(__n_size) * ($PRIV(__n_size)/2+1));
-				iwork = (integer *) malloc (liwork * sizeof (integer));
-				break;
-			case 2: sens = \'V\';
-				lwork  = (integer ) ($PRIV(__n_size) + $PRIV(__n_size) * ($PRIV(__n_size)/2+1));
-				if ($sort()){
-					liwork = (integer )(pow((($PRIV(__n_size)/2)+1), 2));
-					iwork = (integer *) malloc (liwork * sizeof (integer));
-				}
-				else{iwork = (integer *) malloc (liwork * sizeof (integer));}
-				break;
-			case 3: sens = \'B\';
-				lwork  = (integer ) ($PRIV(__n_size) + $PRIV(__n_size) * ($PRIV(__n_size)/2+1));
-				if ($sort()){
-					liwork = (integer )(pow((($PRIV(__n_size)/2)+1), 2));
-					iwork = (integer *) malloc (liwork * sizeof (integer));
-				}
-				else{iwork = (integer *) malloc (liwork * sizeof (integer));}
-				break;
-			default: sens = \'N\';
-				 lwork = (integer ) ($PRIV(__n_size) * 3);
-				 iwork = (integer *) malloc (liwork * sizeof (integer));
+gees ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		}
-		types(D) %{
-		work  = (double * )malloc(lwork * sizeof (double));
-		dgeesx_(
-		&jvs,
-		&psort,
-		dselection_wrapper,
-		&sens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(wr),
-		$P(wi),
-		$P(vs),
-		&(integer){$PRIV(__p_size)},
-		$P(rconde),
-		$P(rcondv),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		bwork,
-		$P(info));
-		%}
 
-		types(F) %{
-		work  = (float * )malloc(lwork * sizeof (float));
-		sgeesx_(
-		&jvs,
-		&psort,
-		fselection_wrapper,
-		&sens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(wr),
-		$P(wi),
-		$P(vs),
-		&(integer){$PRIV(__p_size)},
-		$P(rconde),
-		$P(rcondv),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		bwork,
-		$P(info));
-		%}
-		
-		free(work);
-		free(iwork);
-		if ($sort())
-			free(bwork);
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*gees = \&PDL::gees;
+
+
+
+
+
+=head2 geesx
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int jobvs(); int sort(); int sense(); [o,phys]wr(n); [o,phys]wi(n); [o,phys]vs(p,p); int [o,phys]sdim(); [o,phys]rconde();[o,phys]rcondv(); int [o,phys]info(); SV* select_func)
+
+
 
 =for ref
 
 Computes for an N-by-N real nonsymmetric matrix A, the
 eigenvalues, the real Schur form T, and, optionally, the matrix of
-Schur vectors Z.  This gives the Schur factorization A = Z*T*Z\'.
+Schur vectors Z.  This gives the Schur factorization A = Z*T*Z'.
 
 Optionally, it also orders the eigenvalues on the diagonal of the
 real Schur form so that selected eigenvalues are at the top left;
@@ -2128,7 +1271,7 @@ selected eigenvalues (rcondv).  The leading columns of Z form an
 orthonormal basis for this invariant subspace.
 
 For further explanation of the reciprocal condition numbers rconde
-and rcondv, see Section 4.10 of the LAPACK Users\' Guide (where
+and rcondv, see Section 4.10 of the LAPACK Users' Guide (where
 these quantities are called s and sep respectively).
 
 A real matrix is in real Schur form if it is upper quasi-triangular
@@ -2229,227 +1372,34 @@ the form
  $info = null;
  geesx($A, 1,1, 3, $wr, $wi, $vs, $sdim, $rconde, $rcondv, $info, \&select_function);
 
-');
 
-pp_addhdr('
-static SV*   fgselect_function;
-PDL_Long fgselection_wrapper(float *zr, float *zi, float *d)
-{
-	dSP ;
-	long  choice;
-	int retval;
 
-	ENTER ;
-	SAVETMPS ;
+=for bad
 
-	PUSHMARK(sp) ;
-	XPUSHs(sv_2mortal(newSVnv((double)  *zr)));
-	XPUSHs(sv_2mortal(newSVnv((double)  *zi)));
-	XPUSHs(sv_2mortal(newSVnv((double)  *d)));
-	PUTBACK ;
+geesx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-	retval = perl_call_sv(fgselect_function, G_SCALAR);
 
-	SPAGAIN;
+=cut
 
-	if (retval != 1)
-		croak("Error calling perl function\n");
 
-	choice = (long ) POPl ;  /* Return value */
 
-	PUTBACK ;
-	FREETMPS ;
-	LEAVE ;
 
-	return choice;
-}
-static SV*   dgselect_function;
-PDL_Long dgselection_wrapper(double *zr, double *zi, double *d)
-{
-	dSP ;
-	long  choice;
-	int retval;
 
-	ENTER ;
-	SAVETMPS ;
 
-	PUSHMARK(sp) ;
-	XPUSHs(sv_2mortal(newSVnv(*zr)));
-	XPUSHs(sv_2mortal(newSVnv(*zi)));
-	XPUSHs(sv_2mortal(newSVnv(*d)));
-	PUTBACK ;
+*geesx = \&PDL::geesx;
 
-	retval = perl_call_sv(dgselect_function, G_SCALAR);
 
-	SPAGAIN;
 
-	if (retval != 1)
-		croak("Error calling perl function\n");
 
-	choice = (long ) POPl ;  /* Return value */
 
-	PUTBACK ;
-	FREETMPS ;
-	LEAVE ;
+=head2 gges
 
-	return choice;
-}
+=for sig
 
-');
+  Signature: ([io,phys]A(n,n); int jobvsl();int jobvsr();int sort();[io,phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VSL(m,m);[o,phys]VSR(p,p);int [o,phys]sdim();int [o,phys]info(); SV* select_func)
 
-pp_def("gges",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int jobvsl();int jobvsr();int sort();[io,phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VSL(m,m);[o,phys]VSR(p,p);int [o,phys]sdim();int [o,phys]info()',
-	OtherPars => "SV* select_func" ,
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		integer lwork = -1;
-		char pjobvsl = \'N\', pjobvsr = \'N\', psort = \'N\';
-		integer *bwork;
-
-             types(F) %{
-		extern int sgges_(char *jobvsl, char *jobvsr, char *sort, L_fp
-		delctg, integer *n, float *a, integer *lda, float *b,
-		integer *ldb, integer *sdim, float *alphar, float *alphai,
-		float *beta, float *vsl, integer *ldvsl, float *vsr,
-		integer *ldvsr, float *work, integer *lwork, logical *bwork,
-		integer *info);
-		float tmp_work;
-		fgselect_function    = $PRIV(select_func);
-             %}
-             types(D) %{
-		extern int dgges_(char *jobvsl, char *jobvsr, char *sort, L_fp
-		delctg, integer *n, double *a, integer *lda, double *b,
-		integer *ldb, integer *sdim, double *alphar, double *alphai,
-		double *beta, double *vsl, integer *ldvsl, double *vsr,
-		integer *ldvsr, double *work, integer *lwork, logical *bwork,
-		integer *info);
-		double tmp_work;
-		dgselect_function    = $PRIV(select_func);
-             %}
-		if ($jobvsl())
-			pjobvsl = \'V\';
-		if ($jobvsr())
-			pjobvsr = \'V\';
-		if ($sort()){
-			psort = \'S\';
-			bwork = (integer *)malloc($PRIV(__n_size) *  sizeof(integer));
-		}
-             types(F) %{
-		sgges_(
-		&pjobvsl,
-		&pjobvsr,
-		&psort,
-		fgselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VSL),
-		&(integer){$PRIV(__m_size)},
-		$P(VSR),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
-             types(D) %{
-		dgges_(
-		&pjobvsl,
-		&pjobvsr,
-		&psort,
-		dgselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VSL),
-		&(integer){$PRIV(__m_size)},
-		$P(VSR),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
-
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
-		types(F) %{
-		sgges_(
-		&pjobvsl,
-		&pjobvsr,
-		&psort,
-		fgselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VSL),
-		&(integer){$PRIV(__m_size)},
-		$P(VSR),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
-
-		types(D) %{
-		dgges_(
-		&pjobvsl,
-		&pjobvsr,
-		&psort,
-		dgselection_wrapper,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VSL),
-		&(integer){$PRIV(__m_size)},
-		$P(VSR),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		bwork,
-		$P(info));
-		%}
-
-		free(work);
-		}
-		if ($sort())
-			free (bwork);
-
-',
-      Doc => '
 
 =for ref
 
@@ -2458,7 +1408,7 @@ the generalized eigenvalues, the generalized real Schur form (S,T),
 optionally, the left and/or right matrices of Schur vectors (VSL and
 VSR). This gives the generalized Schur factorization
 
-	(A,B) = ( (VSL)*S*(VSR)\', (VSL)*T*(VSR)\' )
+	(A,B) = ( (VSL)*S*(VSR)', (VSL)*T*(VSR)' )
 
 Optionally, it also orders the eigenvalues so that a selected cluster
 of eigenvalues appears in the leading diagonal blocks of the upper
@@ -2587,170 +1537,34 @@ complex conjugate pair of generalized eigenvalues.
  $vsr = zeroes(5,5);
  gges($a, 1, 1, 1, $b, $alphar, $alphai, $beta, $vsl, $vsr, $sdim,($info=null), \&my_select);
 
-');
-
-pp_def("ggesx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int jobvsl();int jobvsr();int sort();int sense();[io,phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VSL(m,m);[o,phys]VSR(p,p);int [o,phys]sdim();[o,phys]rconde(q);[o,phys]rcondv(r);int [o,phys]info()',
-	OtherPars => "SV* select_func" ,
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		integer maxwrk, lwork,liwork;
-		integer minwrk = 1;
-		static integer c__0 = 0;
-		static integer c__1 = 1;
-		static integer c_n1 = -1;
-		char pjobvsl = \'N\';
-		char pjobvsr = \'N\';
-		char psort = \'N\';
-		char psens = \'N\';
-		integer *bwork;
-		integer *iwork;
-		extern integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
-		integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen
-		opts_len);
-             types(F) %{
-		extern int sggesx_(char *jobvsl, char *jobvsr, char *sort, L_fp
-		delctg, char *sense, integer *n, float *a, integer *lda, float *b,
-		integer *ldb, integer *sdim, float *alphar, float *alphai,
-		float *beta, float *vsl, integer *ldvsl, float *vsr,
-		integer *ldvsr, float *rconde, float *rcondv,  float *work,
-		integer *lwork, integer *iwork, integer *liwork, logical *bwork,
-		integer *info);
-		fgselect_function    = $PRIV(select_func);
-             %}
-             types(D) %{
-		extern int dggesx_(char *jobvsl, char *jobvsr, char *sort, L_fp
-		delctg, char *sense, integer *n, double *a, integer *lda, double *b,
-		integer *ldb, integer *sdim, double *alphar, double *alphai,
-		double *beta, double *vsl, integer *ldvsl, double *vsr,
-		integer *ldvsr,  double *rconde, double *rcondv, double *work,
-		integer *lwork, integer *iwork, integer *liwork, logical *bwork,
-		integer *info);
-		dgselect_function    = $PRIV(select_func);
-             %}
-		if ($jobvsr())
-			pjobvsr = \'V\';
+=for bad
 
-		if ($sort()){
-			psort = \'S\';
-			bwork = (integer *)malloc($PRIV(__n_size) * sizeof(integer));
-		}
+gges ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		switch ($sense())
-		{
-			case 1: psens = \'E\';
-				break;
-			case 2: psens = \'V\';
-				break;
-			case 3: psens = \'B\';
-				break;
-			default: psens = \'N\';
-		}
 
-//		Bug in Lapack ?????
-//		if (!$sense())
-//			liwork = 1;
-//		else
-//		{
-			liwork = $SIZE(n) + 6;
-			iwork =  (integer *)malloc(liwork *  sizeof(integer));
-//		}
+=cut
 
-		// Code modified from Lapack
-		// TODO other shur form above
-		// The actual updated release (clapack 09/20/2000) do not allow
-		// querying the workspace. See release notes of Lapack
-		// for this feature.
 
-		minwrk = ($SIZE(n) + 1 << 3) + 16;
-		maxwrk = ($SIZE(n) + 1) * 7 + $SIZE(n) * (integer ) ilaenv_(&c__1, "DGEQRF", " ", &(integer){$PRIV(__n_size)}, &c__1,
-		&(integer){$PRIV(__n_size)}, &c__0, (ftnlen)6, (ftnlen)1) + 16;
 
-		if ($jobvsl())
-		{
-			integer i__1 = maxwrk;
-			integer i__2 = minwrk + $SIZE(n) * (integer )ilaenv_(&c__1, "DORGQR"
-		    		, " ", &(integer){$PRIV(__n_size)}, &c__1, &(integer){$PRIV(__n_size)}, &c_n1, (ftnlen)6, (ftnlen)1);
-	    		maxwrk = (integer ) max(i__1,i__2);
-			pjobvsl = \'V\';
-		}
-		lwork =  (integer ) max(maxwrk,minwrk);
 
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-		sggesx_(
-		&pjobvsl,
-		&pjobvsr,
-		&psort,
-		fgselection_wrapper,
-		&psens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VSL),
-		&(integer){$PRIV(__m_size)},
-		$P(VSR),
-		&(integer){$PRIV(__p_size)},
-		$P(rconde),
-		$P(rcondv),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		bwork,
-		$P(info));
 
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-		dggesx_(
-		&pjobvsl,
-		&pjobvsr,
-		&psort,
-		dgselection_wrapper,
-		&psens,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(sdim),
-		$P(alphar),
-		$P(alphai),
-		$P(beta),
-		$P(VSL),
-		&(integer){$PRIV(__m_size)},
-		$P(VSR),
-		&(integer){$PRIV(__p_size)},
-		$P(rconde),
-		$P(rcondv),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		bwork,
-		$P(info));
 
-		%}
+*gges = \&PDL::gges;
 
-		free(work);
-		}
-		if ($sort())
-			free(bwork);
-		free(iwork);
 
-',
-      Doc => '
+
+
+
+=head2 ggesx
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int jobvsl();int jobvsr();int sort();int sense();[io,phys]B(n,n);[o,phys]alphar(n);[o,phys]alphai(n);[o,phys]beta(n);[o,phys]VSL(m,m);[o,phys]VSR(p,p);int [o,phys]sdim();[o,phys]rconde(q);[o,phys]rcondv(r);int [o,phys]info(); SV* select_func)
+
+
 
 =for ref
 
@@ -2759,7 +1573,7 @@ Computes for a pair of N-by-N real nonsymmetric matrices
 optionally, the left and/or right matrices of Schur vectors (VSL and
 VSR).  This gives the generalized Schur factorization
 
-	(A,B) = ( (VSL) S (VSR)\', (VSL) T (VSR)\' )
+	(A,B) = ( (VSL) S (VSR)', (VSL) T (VSR)' )
 
 Optionally, it also orders the eigenvalues so that a selected cluster
 of eigenvalues appears in the leading diagonal blocks of the upper
@@ -2802,7 +1616,7 @@ the computed deflating subspaces is
 
 	EPS * norm((A, B)) / RCONDV( 2 ).
 
-See LAPACK User\'s Guide, section 4.11 for more information.
+See LAPACK User's Guide, section 4.11 for more information.
 
 
     Arguments
@@ -2925,81 +1739,34 @@ See LAPACK User\'s Guide, section 4.11 for more information.
  $rcondv = zeroes(2);
  ggesx($a, 1, 1, 1, 3,$b, $alphar, $alphai, $beta, $vsl, $vsr, $sdim, $rconde, $rcondv, ($info=null), \&my_select);
 
-');
 
 
-pp_def("syev",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int jobz(); int uplo(); [o,phys]w(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
+
+ggesx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
 
-		
-
+=cut
 
 
 
-		char jz = \'N\';
-		char puplo = \'U\';
-		integer lwork = -1;
-
-             types(F) %{
-		extern int ssyev_(char *jobz, char *uplo, integer *n, float *a,
-	 	integer *lda, float *w, float *work, integer *lwork,
-		integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsyev_(char *jobz, char *uplo, integer *n, double *a,
-	 	integer *lda, double *w, double *work, integer *lwork,
-		integer *info);
-
-		double tmp_work;
-             %}
-
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
 
 
-		$TFD(ssyev_,dsyev_)(
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+*ggesx = \&PDL::ggesx;
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssyev_,dsyev_)(
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
-',
-      Doc => '
+
+
+
+=head2 syev
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int jobz(); int uplo(); [o,phys]w(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -3040,90 +1807,34 @@ real symmetric matrix A.
  $a = random (5,5);
  syev($a, 1,1, (my $w = zeroes(5)), (my $info=null));
 
-');
-
-pp_def("syevd",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int jobz(); int uplo(); [o,phys]w(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+syev ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		char jz = \'N\';
-		char puplo = \'U\';
-		integer lwork = -1;
-		integer liwork = -1;
-		integer tmp_liwork;
-		integer *iwork;
-
-             types(F) %{
-		extern int ssyevd_(char *jobz, char *uplo, integer *n, float *a,
-		integer *lda, float *w, float *work, integer *lwork,
-		integer *iwork, integer *liwork, integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsyevd_(char *jobz, char *uplo, integer *n, double *a,
-		integer *lda, double *w, double *work, integer *lwork,
-		integer *iwork, integer *liwork, integer *info);
-
-		double tmp_work;
-             %}
-
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
 
 
-		$TFD(ssyevd_,dsyevd_)(
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		&tmp_work,
-		&lwork,
-		&tmp_liwork,
-		&liwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		liwork = (integer )tmp_liwork;
-		iwork = (integer *)malloc(liwork * sizeof(integer));
-		{
-		types(F) %{
+*syev = \&PDL::syev;
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssyevd_,dsyevd_)(
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		$P(info));
-		free(work);
-		free(iwork);
-		}
-',
-      Doc => '
+
+
+
+=head2 syevd
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int jobz(); int uplo(); [o,phys]w(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -3175,119 +1886,34 @@ workspace than syevx.
  $a = random (5,5);
  syevd($a, 1,1, (my $w = zeroes(5)), (my $info=null));
 
-');
-
-pp_def("syevx",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n);  int jobz(); int range(); int uplo(); [phys]vl(); [phys]vu(); int [phys]il(); int [phys]iu(); [phys]abstol(); int [o,phys]m(); [o,phys]w(n); [o,phys]z(p,q);int [o,phys]ifail(r); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+syevd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		char jz = \'N\';
-		char puplo = \'U\';
-		char prange = \'A\';
-		integer lwork = -1;
-		integer *iwork;
 
-             types(F) %{
-		extern int ssyevx_(char *jobz, char *range, char *uplo, integer *n,
-		float *a, integer *lda, float *vl, float *vu, integer *
-		il, integer *iu, float *abstol, integer *m, float *w,
-		float *z__, integer *ldz, float *work, integer *lwork,
-		integer *iwork, integer *ifail, integer *info);
 
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsyevx_(char *jobz, char *range, char *uplo, integer *n,
-		double *a, integer *lda, double *vl, double *vu, integer *
-		il, integer *iu, double *abstol, integer *m, double *w,
-		double *z__, integer *ldz, double *work, integer *lwork,
-		integer *iwork, integer *ifail, integer *info);
 
-		double tmp_work;
-             %}
+*syevd = \&PDL::syevd;
 
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
 
-		switch ($range())
-		{
-			case 1: prange = \'V\';
-				break;
-			case 2: prange = \'I\';
-				break;
-			default: prange = \'A\';
-		}
 
-		iwork = (integer *)malloc(5 * $SIZE (n) * sizeof(integer));
 
-		$TFD(ssyevx_,dsyevx_)(
-		&jz,
-		&prange,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(vl),
-		$P(vu),
-		$P(il),
-		$P(iu),
-		$P(abstol),
-		$P(m),
-		$P(w),
-		$P(z),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		iwork,
-		$P(ifail),
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+=head2 syevx
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
+=for sig
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssyevx_,dsyevx_)(
-		&jz,
-		&prange,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(vl),
-		$P(vu),
-		$P(il),
-		$P(iu),
-		$P(abstol),
-		$P(m),
-		$P(w),
-		$P(z),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		iwork,
-		$P(ifail),
-		$P(info));
-		free(work);
-		free(iwork);
-		}
-',
-      Doc => '
+  Signature: ([phys]A(n,n);  int jobz(); int range(); int uplo(); [phys]vl(); [phys]vu(); int [phys]il(); int [phys]iu(); [phys]abstol(); int [o,phys]m(); [o,phys]w(n); [o,phys]z(p,q);int [o,phys]ifail(r); int [o,phys]info())
+
+
 
 =for ref
 
@@ -3396,126 +2022,34 @@ for the desired eigenvalues.
  $z = zeroes(5,5);
  syevx($a, 1,0,1,0,0,0,0,$abstol, $m, $w, $z ,$ifail, $info);
 
-');
-
-pp_def("syevr",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n);  int jobz(); int range(); int uplo(); [phys]vl(); [phys]vu(); int [phys]il(); int [phys]iu();[phys]abstol();int [o,phys]m();[o,phys]w(n); [o,phys]z(p,q);int [o,phys]isuppz(r); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+syevx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		char jz = \'N\';
-		char puplo = \'U\';
-		char prange = \'A\';
-		integer lwork = -1;
-		integer liwork = -1;
-		integer *iwork;
-		integer tmp_iwork;
-
-             types(F) %{
-		extern int ssyevr_(char *jobz, char *range, char *uplo, integer *n,
-		float *a, integer *lda, float *vl, float *vu, integer *
-		il, integer *iu, float *abstol, integer *m, float *w,
-		float *z__, integer *ldz, integer *isuppz, float *work,
-		integer *lwork, integer *iwork, integer *liwork, integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsyevr_(char *jobz, char *range, char *uplo, integer *n,
-		double *a, integer *lda, double *vl, double *vu, integer *
-		il, integer *iu, double *abstol, integer *m, double *w,
-		double *z__, integer *ldz, integer *isuppz, double *work,
-		integer *lwork, integer *iwork, integer *liwork, integer *info);
-
-		double tmp_work;
-             %}
-
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
-
-		switch ($range())
-		{
-			case 1: prange = \'V\';
-				break;
-			case 2: prange = \'I\';
-				break;
-			default: prange = \'A\';
-		}
 
 
 
-		$TFD(ssyevr_,dsyevr_)(
-		&jz,
-		&prange,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(vl),
-		$P(vu),
-		$P(il),
-		$P(iu),
-		$P(abstol),
-		$P(m),
-		$P(w),
-		$P(z),
-		&(integer){$PRIV(__p_size)},
-		$P(isuppz),
-		&tmp_work,
-		&lwork,
-		&tmp_iwork,
-		&liwork,
-		$P(info));
+*syevx = \&PDL::syevx;
 
-		lwork = (integer )tmp_work;
-		liwork = (integer )tmp_iwork;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		iwork = (integer *)malloc(liwork * sizeof(integer));
 
-		$TFD(ssyevr_,dsyevr_)(
-		&jz,
-		&prange,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(vl),
-		$P(vu),
-		$P(il),
-		$P(iu),
-		$P(abstol),
-		$P(m),
-		$P(w),
-		$P(z),
-		&(integer){$PRIV(__p_size)},
-		$P(isuppz),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		$P(info));
-		free(work);
-		free(iwork);
-		}
-',
-      Doc => '
+
+=head2 syevr
+
+=for sig
+
+  Signature: ([phys]A(n,n);  int jobz(); int range(); int uplo(); [phys]vl(); [phys]vu(); int [phys]il(); int [phys]iu();[phys]abstol();int [o,phys]m();[o,phys]w(n); [o,phys]z(p,q);int [o,phys]isuppz(r); int [o,phys]info())
+
+
 
 =for ref
 
@@ -3666,80 +2200,34 @@ manner.
  $z = zeroes(5,5);
  syevr($a, 1,0,1,0,0,0,0,$abstol, $m, $w, $z ,$isuppz, $info);
 
-');
-
-pp_def("sygv",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);int [phys]itype();int jobz(); int uplo();[io,phys]B(n,n);[o,phys]w(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-
-		char jz = \'N\';
-		char puplo = \'U\';
-		integer lwork = -1;
-
-             types(F) %{
-		extern int ssygv_(integer *itype, char *jobz, char *uplo, integer *
-		n, float *a, integer *lda, float *b, integer *ldb,
-		float *w, float *work, integer *lwork, integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsygv_(integer *itype, char *jobz, char *uplo, integer *
-		n, double *a, integer *lda, double *b, integer *ldb,
-		double *w, double *work, integer *lwork, integer *info);
-
-		double tmp_work;
-             %}
-
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
 
 
-		$TFD(ssygv_,dsygv_)(
-		$P(itype),
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+syevr ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssygv_,dsygv_)(
-		$P(itype),
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*syevr = \&PDL::syevr;
+
+
+
+
+
+=head2 sygv
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);int [phys]itype();int jobz(); int uplo();[io,phys]B(n,n);[o,phys]w(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -3772,8 +2260,8 @@ positive definite.
             On exit, if jobz = 1, then if info = 0, A contains the
             matrix Z of eigenvectors.  The eigenvectors are normalized
             as follows:
-            if itype = 1 or 2, Z\'*B*Z = I;
-            if itype = 3, Z\'*inv(B)*Z = I.
+            if itype = 1 or 2, Z'*B*Z = I;
+            if itype = 3, Z'*inv(B)*Z = I.
             If jobz = 0, then on exit the upper triangle (if uplo=0)
             or the lower triangle (if uplo=1) of A, including the
             diagonal, is destroyed.
@@ -3786,7 +2274,7 @@ positive definite.
 
             On exit, if info <= N, the part of B containing the matrix is
             overwritten by the triangular factor U or L from the Cholesky
-            factorization B = U\'*U or B = L*L\'.
+            factorization B = U'*U or B = L*L'.
 
     W:      If info = 0, the eigenvalues in ascending order.
 
@@ -3809,93 +2297,34 @@ positive definite.
  $b = random (5,5);
  sygv($a, 1,1, 0, $b, (my $w = zeroes(5)), (my $info=null));
 
-');
-
-pp_def("sygvd",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);int [phys]itype();int jobz(); int uplo();[io,phys]B(n,n);[o,phys]w(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-
-		char jz = \'N\';
-		char puplo = \'U\';
-		integer lwork = -1;
-		integer liwork = -1;
-		integer *iwork;
-		integer tmp_iwork;
-
-             types(F) %{
-		extern int ssygvd_(integer *itype, char *jobz, char *uplo, integer *
-		n, float *a, integer *lda, float *b, integer *ldb,
-		float *w, float *work, integer *lwork, integer *iwork,
-		integer *liwork, integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsygvd_(integer *itype, char *jobz, char *uplo, integer *
-		n, double *a, integer *lda, double *b, integer *ldb,
-		double *w, double *work, integer *lwork, integer *iwork,
-		integer *liwork, integer *info);
-
-		double tmp_work;
-             %}
-
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
 
 
-		$TFD(ssygvd_,dsygvd_)(
-		$P(itype),
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		&tmp_work,
-		&lwork,
-		&tmp_iwork,
-		&liwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		liwork = (integer )tmp_iwork;
-		iwork = (integer *)malloc(liwork *  sizeof(integer));
+sygv ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
+=cut
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssygvd_,dsygvd_)(
-		$P(itype),
-		&jz,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(w),
-		work,
-		&lwork,
-		iwork,
-		&liwork,
-		$P(info));
-		free(work);
-		}
-		free(iwork);
-',
-      Doc => '
+
+
+
+
+
+*sygv = \&PDL::sygv;
+
+
+
+
+
+=head2 sygvd
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);int [phys]itype();int jobz(); int uplo();[io,phys]B(n,n);[o,phys]w(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -3935,8 +2364,8 @@ without guard digits, but we know of none.
             On exit, if jobz = 1, then if info = 0, A contains the
             matrix Z of eigenvectors.  The eigenvectors are normalized
             as follows:
-            if itype = 1 or 2, Z\'*B*Z = I;
-            if itype = 3, Z\'*inv(B)*Z = I.
+            if itype = 1 or 2, Z'*B*Z = I;
+            if itype = 3, Z'*inv(B)*Z = I.
             If jobz = 0, then on exit the upper triangle (if uplo=0)
             or the lower triangle (if uplo=1) of A, including the
             diagonal, is destroyed.
@@ -3949,7 +2378,7 @@ without guard digits, but we know of none.
 
             On exit, if info <= N, the part of B containing the matrix is
             overwritten by the triangular factor U or L from the Cholesky
-            factorization B = U\'*U or B = L*L\'.
+            factorization B = U'*U or B = L*L'.
 
     W:      If info = 0, the eigenvalues in ascending order.
 
@@ -3972,120 +2401,34 @@ without guard digits, but we know of none.
  $b = random (5,5);
  sygvd($a, 1,1, 0, $b, (my $w = zeroes(5)), (my $info=null));
 
-');
 
-pp_def("sygvx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);int [phys]itype();int jobz();int range(); int uplo();[io,phys]B(n,n);[phys]vl();[phys]vu();int [phys]il();int [phys]iu();[phys]abstol();int [o,phys]m();[o,phys]w(n); [o,phys]Z(p,q);int [o,phys]ifail(r);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		char jz = \'N\';
-		char puplo = \'U\';
-		char prange;
-		integer lwork = -1;
-		integer *iwork;
 
-             types(F) %{
-		extern int ssygvx_(integer *itype, char *jobz, char *range, char *
-		uplo, integer *n, float *a, integer *lda, float *b, integer
-		*ldb, float *vl, float *vu, integer *il, integer *iu,
-		float *abstol, integer *m, float *w, float *z__,
-		integer *ldz, float *work, integer *lwork, integer *iwork,
-		integer *ifail, integer *info);
+=for bad
 
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsygvx_(integer *itype, char *jobz, char *range, char *
-		uplo, integer *n, double *a, integer *lda, double *b, integer
-		*ldb, double *vl, double *vu, integer *il, integer *iu,
-		double *abstol, integer *m, double *w, double *z__,
-		integer *ldz, double *work, integer *lwork, integer *iwork,
-		integer *ifail, integer *info);
+sygvd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		double tmp_work;
-             %}
 
-		if ($jobz())
-			jz = \'V\';
-		if ($uplo())
-			puplo = \'L\';
+=cut
 
-		switch ($range())
-		{
-			case 1: prange = \'V\';
-				break;
-			case 2: prange = \'I\';
-				break;
-			default: prange = \'A\';
-		}
 
-		iwork = (integer *)malloc((5 * $SIZE(n)) *  sizeof(integer));
 
-		$TFD(ssygvx_,dsygvx_)(
-		$P(itype),
-		&jz,
-		&prange,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(vl),
-		$P(vu),
-		$P(il),
-		$P(iu),
-		$P(abstol),
-		$P(m),
-		$P(w),
-		$P(Z),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		iwork,
-		$P(ifail),
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssygvx_,dsygvx_)(
-		$P(itype),
-		&jz,
-		&prange,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(vl),
-		$P(vu),
-		$P(il),
-		$P(iu),
-		$P(abstol),
-		$P(m),
-		$P(w),
-		$P(Z),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		iwork,
-		$P(ifail),
-		$P(info));
-		free(work);
-		}
-		free(iwork);
-',
-      Doc => '
+*sygvd = \&PDL::sygvd;
+
+
+
+
+
+=head2 sygvx
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);int [phys]itype();int jobz();int range(); int uplo();[io,phys]B(n,n);[phys]vl();[phys]vu();int [phys]il();int [phys]iu();[phys]abstol();int [o,phys]m();[o,phys]w(n); [o,phys]Z(p,q);int [o,phys]ifail(r);int [o,phys]info())
+
+
 
 =for ref
 
@@ -4133,7 +2476,7 @@ range of values or a range of indices for the desired eigenvalues.
 
             On exit, if info <= N, the part of B containing the matrix is
             overwritten by the triangular factor U or L from the Cholesky
-            factorization B = U\'*U or B = L*L\'.
+            factorization B = U'*U or B = L*L'.
 
     vl:
     vu:     If range=1, the lower and upper bounds of the interval to
@@ -4176,8 +2519,8 @@ range of values or a range of indices for the desired eigenvalues.
             corresponding to the selected eigenvalues, with the i-th
             column of Z holding the eigenvector associated with w(i).
             The eigenvectors are normalized as follows:
-            if itype = 1 or 2, Z\'*B*Z = I;
-            if itype = 3, Z\'*inv(B)*Z = I.
+            if itype = 1 or 2, Z'*B*Z = I;
+            if itype = 3, Z'*inv(B)*Z = I.
 
             If an eigenvector fails to converge, then that column of Z
             contains the latest approximation to the eigenvector, and the
@@ -4218,35 +2561,34 @@ range of values or a range of indices for the desired eigenvalues.
  $ifail = zeroes(5); 
  sygvx($a, 1,1, 0,0, $b, 0, 0, 0, 0, $abstol, $m, $w, $z,$ifail,(my $info=null));
 
-');
 
 
-pp_def("gesv",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  [io,phys]B(n,m); int [o,phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-             types(F) %{
-		extern int sgesv_(integer *n, integer *nrhs, float *a, integer
-		*lda, integer *ipiv, float *b, integer *ldb, integer *info);
-             %}
-             types(D) %{
-		extern int dgesv_(integer *n, integer *nrhs, double *a, integer
-		*lda, integer *ipiv, double *b, integer *ldb, integer *info);
-             %}
+sygvx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(sgesv_,dgesv_)(
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+
+=cut
+
+
+
+
+
+
+*sygvx = \&PDL::sygvx;
+
+
+
+
+
+=head2 gesv
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  [io,phys]B(n,m); int [o,phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -4293,115 +2635,34 @@ system of equations A * X = B.
  gesv($a,$b, (my $ipiv=zeroes(5)),(my $info=null));
  print "The solution matrix X is :". transpose($b)."\n" unless $info;
 
-');
 
 
-pp_def("gesvx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int trans(); int fact(); [io,phys]B(n,m); [io,phys]af(n,n); int [io,phys]ipiv(n); int [io]equed(); [io,phys]r(n); [io,phys]c(n); [o,phys]X(n,m); [o,phys]rcond(); [o,phys]ferr(m); [o,phys]berr(m);[o,phys]rpvgrw();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-		char ptrans, pfact, pequed;
-		integer *iwork;
+gesv ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-             types(F) %{
-		extern int sgesvx_(char *fact, char *trans, integer *n, integer *
-		nrhs, float *a, integer *lda, float *af, integer *ldaf,
-		integer *ipiv, char *equed, float *r__, float *c__,
-		float *b, integer *ldb, float *x, integer *ldx, float *
-		rcond, float *ferr, float *berr, float *work, integer *
-		iwork, integer *info);
-		float *work;
-             %}
-             types(D) %{
-		extern int dgesvx_(char *fact, char *trans, integer *n, integer *
-		nrhs, double *a, integer *lda, double *af, integer *ldaf,
-		integer *ipiv, char *equed, double *r__, double *c__,
-		double *b, integer *ldb, double *x, integer *ldx, double *
-		rcond, double *ferr, double *berr, double *work, integer *
-		iwork, integer *info);
-		double *work;
-             %}
 
-		switch ($trans())
-		{
-			case 1: ptrans = \'T\';
-				break;
-			case 2: ptrans = \'C\';
-				break;
-			default: ptrans = \'N\';
-		}
-		switch ($fact())
-		{
-			case 1: pfact = \'N\';
-				break;
-			case 2: pfact = \'E\';
-				break;
-			default: pfact = \'F\';
-		}
-		switch ($equed())
-		{
-			case 1:   pequed = \'R\';
-				  break;
-			case 2:   pequed = \'C\';
-				  break;
-			case 3:   pequed = \'B\';
-				  break;
-			default:  pequed = \'N\';
-		}
+=cut
 
-		types(F) %{
 
-		work = (float *) malloc(4 * $PRIV(__n_size) *  sizeof(float));
-             %}
-             types(D) %{
 
-		work = (double *) malloc(4 * $PRIV(__n_size) *  sizeof(double));
-             %}
-		iwork  = (integer *) malloc ($PRIV(__n_size)* sizeof (integer));
 
-		$TFD(sgesvx_,dgesvx_)(
-		&pfact,
-		&ptrans,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(af),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		&pequed,
-		$P(r),
-		$P(c),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(X),
-		&(integer){$PRIV(__n_size)},
-		$P(rcond),
-		$P(ferr),
-		$P(berr),
-		work,
-		iwork,
-		$P(info));
 
-		free(work);
-		free(iwork);
 
-		switch (pequed)
-		{
-			case \'R\': $equed() = 1;
-				  break;
-			case \'C\': $equed() = 2;
-				  break;
-			case \'B\': $equed() = 3;
-				  break;
-			default: $equed()= 0;
-		}
-		$rpvgrw()=work[0];		
+*gesv = \&PDL::gesv;
 
-',
-      Doc => '
+
+
+
+
+=head2 gesvx
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int trans(); int fact(); [io,phys]B(n,m); [io,phys]af(n,n); int [io,phys]ipiv(n); int [io]equed(); [io,phys]r(n); [io,phys]c(n); [o,phys]X(n,m); [o,phys]rcond(); [o,phys]ferr(m); [o,phys]berr(m);[o,phys]rpvgrw();int [o,phys]info())
+
+
 
 =for ref
 
@@ -4426,7 +2687,7 @@ If fact = 2, real scaling factors are computed to equilibrate
 the system:
 
 	trans = 0:  diag(r)*A*diag(c)     *inv(diag(c))*X = diag(c)*B
-	trans = 1: (diag(r)*A*diag(c))\' *inv(diag(r))*X = diag(c)*B
+	trans = 1: (diag(r)*A*diag(c))' *inv(diag(r))*X = diag(c)*B
 	trans = 2: (diag(r)*A*diag(c))**H *inv(diag(r))*X = diag(c)*B
 
 Whether or not the system will be equilibrated depends on the
@@ -4488,7 +2749,7 @@ that it solves the original system before equilibration.
 
     trans:  Specifies the form of the system of equations:
             = 0:  A * X = B     (No transpose)
-            = 1:  A\' * X = B  (Transpose)
+            = 1:  A' * X = B  (Transpose)
             = 2:  A**H * X = B  (Transpose)
 
     A:      On entry, the N-by-N matrix A.  If fact = 0 and equed is
@@ -4630,79 +2891,34 @@ that it solves the original system before equilibration.
  gesvx($a,0, 2, $b, $af, $ipiv, $equed, $r, $c, $X, $rcond, $ferr, $berr, $rpvgrw, $info);
  print "The solution matrix X is :". transpose($X)."\n" unless $info;
 
-');
 
 
-pp_def("sysv",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int uplo(); [io,phys]B(n,m); int [o,phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
+
+gesvx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
 
-		
-
+=cut
 
 
 
-		char puplo = \'U\';
-		integer lwork = -1;
-             types(F) %{
-		extern int ssysv_(char *uplo, integer *n, integer *nrhs, float
-		*a, integer *lda, integer *ipiv, float *b, integer *ldb,
-		float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsysv_(char *uplo, integer *n, integer *nrhs, double
-		*a, integer *lda, integer *ipiv, double *b, integer *ldb,
-		double *work, integer *lwork, integer *info);
-		double tmp_work;
-             %}
-		if ($uplo())
-			puplo = \'L\';
-
-		$TFD(ssysv_,dsysv_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-                &tmp_work,
-		&lwork,
-		$P(info));
 
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
-
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(ssysv_,dsysv_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-                work,
-		&lwork,
-		$P(info));
+*gesvx = \&PDL::gesvx;
 
 
-             }
-',
-      Doc => '
+
+
+
+=head2 sysv
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int uplo(); [io,phys]B(n,m); int [o,phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -4714,8 +2930,8 @@ Computes the solution to a real system of linear equations
 
 The diagonal pivoting method is used to factor A as
 
-	A = U * D * U\',  if uplo = 0, or
-	A = L * D * L\',  if uplo = 1,
+	A = U * D * U',  if uplo = 0, or
+	A = L * D * L',  if uplo = 1,
 	where U (or L) is a product of permutation and unit upper (lower)
 	triangular matrices, and D is symmetric and block diagonal with
 	1-by-1 and 2-by-2 diagonal blocks.
@@ -4739,7 +2955,7 @@ used to solve the system of equations A * X = B.
 
             On exit, if info = 0, the block diagonal matrix D and the
             multipliers used to obtain the factor U or L from the
-            factorization A = U*D*U\' or A = L*D*L\' as computed by
+            factorization A = U*D*U' or A = L*D*L' as computed by
             sytrf.
 
     ipiv:   Details of the interchanges and the block structure of D, as
@@ -4772,110 +2988,34 @@ used to solve the system of equations A * X = B.
  sysv($a, 1, $b, (my $ipiv=zeroes(5)),(my $info=null));
  print "The solution matrix X is :". transpose($b)."\n" unless $info;
 
-');
-
-pp_def("sysvx",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); int fact(); [phys]B(n,m); [io,phys]af(n,n); int [io,phys]ipiv(n); [o,phys]X(n,m); [o,phys]rcond(); [o,phys]ferr(m); [o,phys]berr(m); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+sysv ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
 
-		char pfact = \'N\';
-		char puplo = \'U\';
-		integer lwork = -1;
-		integer *iwork;
-
-             types(F) %{
-		extern int ssysvx_(char *fact, char *uplo, integer *n, integer *
-		nrhs, float *a, integer *lda, float *af, integer *ldaf,
-		integer *ipiv, float *b, integer *ldb, float *x, integer *
-		ldx, float *rcond, float *ferr, float *berr,
-		float *work, integer *lwork, integer *iwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dsysvx_(char *fact, char *uplo, integer *n, integer *
-		nrhs, double *a, integer *lda, double *af, integer *ldaf,
-		integer *ipiv, double *b, integer *ldb, double *x, integer *
-		ldx, double *rcond, double *ferr, double *berr,
-		double *work, integer *lwork, integer *iwork, integer *info);
-		double tmp_work;
-             %}
-
-		if($fact())
-			pfact = \'F\';
-
-		if ($uplo())
-			puplo = \'L\';
-
-		iwork  = (integer *) malloc ($PRIV(__n_size)* sizeof (integer));
 
 
-		$TFD(ssysvx_,dsysvx_)(
-		&pfact,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(af),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(X),
-		&(integer){$PRIV(__n_size)},
-		$P(rcond),
-		$P(ferr),
-		$P(berr),
-		&tmp_work,
-		&lwork,
-		iwork,
-		$P(info));
+*sysv = \&PDL::sysv;
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
 
-		$TFD(ssysvx_,dsysvx_)(
-		&pfact,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(af),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(X),
-		&(integer){$PRIV(__n_size)},
-		$P(rcond),
-		$P(ferr),
-		$P(berr),
-		work,
-		&lwork,
-		iwork,
-		$P(info));
-		free(work);
-		}
-		free(iwork);
 
-',
-      Doc => '
+
+
+=head2 sysvx
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); int fact(); [phys]B(n,m); [io,phys]af(n,n); int [io,phys]ipiv(n); [o,phys]X(n,m); [o,phys]rcond(); [o,phys]ferr(m); [o,phys]berr(m); int [o,phys]info())
+
+
 
 =for ref
 
@@ -4896,8 +3036,8 @@ The following steps are performed:
 If fact = 0, the diagonal pivoting method is used to factor A.
 The form of the factorization is
 
-	A = U * D * U\',  if uplo = 0, or
-	A = L * D * L\',  if uplo = 1,
+	A = U * D * U',  if uplo = 0, or
+	A = L * D * L',  if uplo = 1,
 	where U (or L) is a product of permutation and unit upper (lower)
 	triangular matrices, and D is symmetric and block diagonal with
 	1-by-1 and 2-by-2 diagonal blocks.
@@ -4949,12 +3089,12 @@ for it.
     af:     If fact = 1, then af is an input argument and on entry
             contains the block diagonal matrix D and the multipliers used
             to obtain the factor U or L from the factorization
-            A = U*D*U\' or A = L*D*L\' as computed by sytrf.
+            A = U*D*U' or A = L*D*L' as computed by sytrf.
 
             If fact = 0, then af is an output argument and on exit
             returns the block diagonal matrix D and the multipliers used
             to obtain the factor U or L from the factorization
-            A = U*D*U\' or A = L*D*L\'.
+            A = U*D*U' or A = L*D*L'.
 
     ipiv:   If fact = 1, then ipiv is an input argument and on entry
             contains details of the interchanges and the block structure
@@ -5027,45 +3167,34 @@ for it.
  sysvx($a, 0, 0, $b,$af, $ipiv, $X, $rcond, $ferr, $berr,$info);
  print "The solution matrix X is :". transpose($X)."\n";
 
-');
-
-pp_def("posv",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n);  int uplo(); [io,phys]B(n,m); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+sysvx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-             char puplo = \'U\';
 
-             types(F) %{
-		extern int sposv_(char *uplo, integer *n, integer *nrhs, float
-		*a, integer *lda, float *b, integer *ldb, integer *info);
-             %}
-             types(D) %{
-		extern int dposv_(char *uplo, integer *n, integer *nrhs, double
-		*a, integer *lda, double *b, integer *ldb, integer *info);
-             %}
 
-		if ($uplo())
-			puplo = \'L\';
 
-		$TFD(sposv_,dposv_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+*sysvx = \&PDL::sysvx;
+
+
+
+
+
+=head2 posv
+
+=for sig
+
+  Signature: ([io,phys]A(n,n);  int uplo(); [io,phys]B(n,m); int [o,phys]info())
+
+
 
 =for ref
 
@@ -5077,8 +3206,8 @@ Computes the solution to a real system of linear equations
 
 The Cholesky decomposition is used to factor A as
 
-	A = U\'* U,  if uplo = 0, or
-	A = L * L\',  if uplo = 1,
+	A = U'* U,  if uplo = 0, or
+	A = L * L',  if uplo = 1,
 	where U is an upper triangular matrix and L is a lower triangular
 	matrix.
 
@@ -5100,7 +3229,7 @@ equations A * X = B.
             triangular part of A is not referenced.
 
             On exit, if info = 0, the factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\'.
+            factorization A = U'*U or A = L*L'.
 
     B:      On entry, the N-by-NRHS right hand side matrix B.
             On exit, if info = 0, the N-by-NRHS solution matrix X.
@@ -5121,103 +3250,38 @@ equations A * X = B.
  posv($a, 1, $b, (my $info=null));
  print "The solution matrix X is :". transpose($b)."\n" unless $info;
 
-');
-
-pp_def("posvx",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int fact(); [io,phys]B(n,m); [io,phys]af(n,n); int [io]equed(); [io,phys]s(n); [o,phys]X(n,m); [o,phys]rcond(); [o,phys]ferr(m); [o,phys]berr(m); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+posv ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		char pfact;
-		char pequed = \'N\';
-		char puplo = \'U\';
-		integer *iwork;
 
-             types(F) %{
-		extern int sposvx_(char *fact, char *uplo, integer *n, integer *
-		nrhs, float *a, integer *lda, float *af, integer *ldaf,
-		char *equed, float *s, float *b, integer *ldb, float *
-		x, integer *ldx, float *rcond, float *ferr, float *
-		berr, float *work, integer *iwork, integer *info);
-		float *work;
-             %}
-             types(D) %{
-		extern int dposvx_(char *fact, char *uplo, integer *n, integer *
-		nrhs, double *a, integer *lda, double *af, integer *ldaf,
-		char *equed, double *s, double *b, integer *ldb, double *
-		x, integer *ldx, double *rcond, double *ferr, double *
-		berr, double *work, integer *iwork, integer *info);
-		double *work;
-             %}
 
-		switch ($fact())
-		{
-			case 1: pfact = \'N\';
-				break;
-			case 2: pfact = \'E\';
-				break;
-			default: pfact = \'F\';
-		}
-		if ($equed())
-			pequed = \'Y\';
-		if ($uplo())
-			puplo = \'L\';
 
-		types(F) %{
+*posv = \&PDL::posv;
 
-		work = (float *) malloc(3 * $PRIV(__n_size) *  sizeof(float));
-             %}
-             types(D) %{
 
-		work = (double *) malloc(3 * $PRIV(__n_size) *  sizeof(double));
-             %}
-		iwork  = (integer *) malloc ($PRIV(__n_size)* sizeof (integer));
 
-		$TFD(sposvx_,dposvx_)(
-		&pfact,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(af),
-		&(integer){$PRIV(__n_size)},
-		&pequed,
-		$P(s),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(X),
-		&(integer){$PRIV(__n_size)},
-		$P(rcond),
-		$P(ferr),
-		$P(berr),
-		work,
-		iwork,
-		$P(info));
 
-		free(work);
-		free(iwork);
 
-		switch (pequed)
-		{
-			case \'Y\': $equed() = 1;
-				  break;
-			default: $equed()= 0;
-		}
+=head2 posvx
 
-',
-      Doc => '
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int fact(); [io,phys]B(n,m); [io,phys]af(n,n); int [io]equed(); [io,phys]s(n); [o,phys]X(n,m); [o,phys]rcond(); [o,phys]ferr(m); [o,phys]berr(m); int [o,phys]info())
+
+
 
 =for ref
 
-Uses the Cholesky factorization A = U\'*U or A = L*L\' to
+Uses the Cholesky factorization A = U'*U or A = L*L' to
 compute the solution to a real system of linear equations
 
 	A * X = B,
@@ -5248,8 +3312,8 @@ overwritten by diag(s)*A*diag(s) and B by diag(s)*B.
 If fact = 1 or 2, the Cholesky decomposition is used to
 factor the matrix A (after equilibration if fact = 2) as
 
-	A = U\'* U,  if uplo = 0, or
-	A = L * L\',  if uplo = 1,
+	A = U'* U,  if uplo = 0, or
+	A = L * L',  if uplo = 1,
 	where U is an upper triangular matrix and L is a lower triangular
        	matrix.
 
@@ -5315,18 +3379,18 @@ equilibration.
 
     af:     If fact = 0, then af is an input argument and on entry
             contains the triangular factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\', in the same storage
+            factorization A = U'*U or A = L*L', in the same storage
             format as A.  If equed != 0, then af is the factored form
             of the equilibrated matrix diag(s)*A*diag(s).
 
             If fact = 1, then af is an output argument and on exit
             returns the triangular factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\' of the original
+            factorization A = U'*U or A = L*L' of the original
             matrix A.
 
             If fact = 2, then af is an output argument and on exit
             returns the triangular factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\' of the equilibrated
+            factorization A = U'*U or A = L*L' of the equilibrated
             matrix A (see the description of A for the form of the
             equilibrated matrix).
 
@@ -5404,81 +3468,34 @@ equilibration.
  posvx($a,0,2,$b,$af, $equed, $s, $X, $rcond, $ferr, $berr,$info);
  print "The solution matrix X is :". transpose($X)."\n" unless $info;
 
-');
-
-pp_def("gels",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); int trans(); [io,phys]B(p,q);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
 
+posvx ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
 
-		char ptrans = \'N\';
-		integer lwork = -1;
 
-             types(F) %{
-		extern int sgels_(char *trans, integer *m, integer *n, integer *
-		nrhs, float *a, integer *lda, float *b, integer *ldb,
-		float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgels_(char *trans, integer *m, integer *n, integer *
-		nrhs, double *a, integer *lda, double *b, integer *ldb,
-		double *work, integer *lwork, integer *info);
-		double tmp_work;
-             %}
 
-		if($trans())
-			ptrans = \'T\';
+*posvx = \&PDL::posvx;
 
 
 
-		$TFD(sgels_,dgels_)(
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
 
-		$TFD(sgels_,dgels_)(
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=head2 gels
 
-',
-      Doc => '
+=for sig
+
+  Signature: ([io,phys]A(m,n); int trans(); [io,phys]B(p,q);int [o,phys]info())
+
+
 
 =for ref
 
@@ -5504,13 +3521,13 @@ an underdetermined system A * X = B.
 =item 3
 
 If trans = 1 and m >= n:  find the minimum norm solution of
-an undetermined system A\' * X = B.
+an undetermined system A' * X = B.
 
 =item 4
 
 If trans = 1 and m < n:  find the least squares solution of
 an overdetermined system, i.e., solve the least squares problem
-minimize || B - A\' * X ||.
+minimize || B - A' * X ||.
 
 =back
 
@@ -5523,7 +3540,7 @@ matrix X.
     =========
 
     trans:  = 0: the linear system involves A;
-            = 1: the linear system involves A\'.
+            = 1: the linear system involves A'.
 
     A:      On entry, the M-by-N matrix A.
             On exit,
@@ -5563,79 +3580,34 @@ matrix X.
  $b = random(7,6);
  gels($a, 1, $b, ($info = null));
 
-');
-
-pp_def("gelsy",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [io,phys]B(p,q); [phys]rcond(); int [io,phys]jpvt(n); int [o,phys]rank();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
+
+gels ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		integer lwork = -1;
 
-             types(F) %{
-		extern int sgelsy_(integer *m, integer *n, integer *nrhs,
-		float *a, integer *lda, float *b, integer *ldb, integer *
-		jpvt, float *rcond, integer *rank, float *work, integer *
-		lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgelsy_(integer *m, integer *n, integer *nrhs,
-		double *a, integer *lda, double *b, integer *ldb, integer *
-		jpvt, double *rcond, integer *rank, double *work, integer *
-		lwork, integer *info);
-		double tmp_work;
-             %}
 
-		$TFD(sgelsy_,dgelsy_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(jpvt),
-		$P(rcond),
-		$P(rank),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
+*gels = \&PDL::gels;
 
-		$TFD(sgelsy_,dgelsy_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(jpvt),
-		$P(rcond),
-		$P(rank),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+=head2 gelsy
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [io,phys]B(p,q); [phys]rcond(); int [io,phys]jpvt(n); int [o,phys]rank();int [o,phys]info())
+
+
 
 =for ref
 
@@ -5671,7 +3643,7 @@ complete orthogonal factorization:
 
 The minimum-norm solution is then
 
-	X = P * Z\' [ inv(T11)*Q1\'*B ]
+	X = P * Z' [ inv(T11)*Q1'*B ]
 		   [	     0	    ]
 	where Q1 consists of the first rank columns of Q.
 
@@ -5718,79 +3690,34 @@ The minimum-norm solution is then
  $rcond = sqrt($eps) - (sqrt($eps) - $eps) / 2;
  gelsy($a, $b, $rcond, $jpvt,($rank=null),($info = null));
 
-');
-
-pp_def("gelss",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [io,phys]B(p,q); [phys]rcond(); [o,phys]s(r); int [o,phys]rank();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
+
+gelsy ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		integer lwork = -1;
 
-             types(F) %{
-		extern int sgelss_(integer *m, integer *n, integer *nrhs,
-		float *a, integer *lda, float *b, integer *ldb, float *s,
-		float *rcond, integer *rank, float *work, integer *
-		lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgelss_(integer *m, integer *n, integer *nrhs,
-		double *a, integer *lda, double *b, integer *ldb,
-		double *s,double *rcond, integer *rank, double *work, integer *
-		lwork, integer *info);
-		double tmp_work;
-             %}
 
-		$TFD(sgelss_,dgelss_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(s),
-		$P(rcond),
-		$P(rank),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
+*gelsy = \&PDL::gelsy;
 
-		$TFD(sgelss_,dgelss_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(s),
-		$P(rcond),
-		$P(rank),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+=head2 gelss
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [io,phys]B(p,q); [phys]rcond(); [o,phys]s(r); int [o,phys]rank();int [o,phys]info())
+
+
 
 =for ref
 
@@ -5854,104 +3781,34 @@ value.
  $rcond = sqrt($eps) - (sqrt($eps) - $eps) / 2;
  gelss($a, $b, $rcond, $s, ($rank=null),($info = null));
 
-');
-
-pp_def("gelsd",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [io,phys]B(p,q); [phys]rcond(); [o,phys]s(r); int [o,phys]rank();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
+
+gelss ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		integer lwork = -1;
-		integer smlsiz, size_i, nlvl, *iwork;
-		integer minmn = min( $SIZE(m), $SIZE(n) );
-
-		extern integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
-		integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen
-		opts_len);
-
-             types(F) %{
-		extern int sgelsd_(integer *m, integer *n, integer *nrhs,
-		float *a, integer *lda, float *b, integer *ldb, float *s,
-		float *rcond, integer *rank, float *work, integer *
-		lwork,  integer *iwork, integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgelsd_(integer *m, integer *n, integer *nrhs,
-		double *a, integer *lda, double *b, integer *ldb,
-		double *s,double *rcond, integer *rank, double *work, integer *
-		lwork, integer *iwork,integer *info);
-
-		double tmp_work;
-             %}
-
-		minmn = max(1,minmn);
-
-             types(F) %{
-		smlsiz = ilaenv_(&c_nine, "SGELSD", " ", &c_zero, &c_zero, &c_zero, &c_zero, (ftnlen)6, (ftnlen)1);
-		size_i = (integer) (log((float) minmn / (float) (smlsiz + 1)) /log(2.)) + 1;
-             %}
-             types(D) %{
-		smlsiz = ilaenv_(&c_nine, "DGELSD", " ", &c_zero, &c_zero, &c_zero, &c_zero, (ftnlen)6, (ftnlen)1);
-		size_i = (integer) (log((double) minmn / (double) (smlsiz + 1)) /log(2.)) + 1;
-             %}
-		nlvl = max(size_i, 0);
-		iwork = (integer *)malloc((3 * minmn * nlvl + 11 * minmn) *  sizeof(integer));
 
 
-		$TFD(sgelsd_,dgelsd_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(s),
-		$P(rcond),
-		$P(rank),
-		&tmp_work,
-		&lwork,
-		iwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
+*gelss = \&PDL::gelss;
 
-		$TFD(sgelsd_,dgelsd_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__q_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(s),
-		$P(rcond),
-		$P(rank),
-		work,
-		&lwork,
-		iwork,
-		$P(info));
-		free(work);
-		}
-		free (iwork);
 
-',
-      Doc => '
+
+
+
+=head2 gelsd
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [io,phys]B(p,q); [phys]rcond(); [o,phys]s(r); int [o,phys]rank();int [o,phys]info())
+
+
 
 =for ref
 
@@ -6042,80 +3899,34 @@ without guard digits, but we know of none.
  $rcond = sqrt($eps) - (sqrt($eps) - $eps) / 2;
  gelsd($a, $b, $rcond, $s, ($rank=null),($info = null));
 
-');
-
-pp_def("gglse",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); [phys]B(p,n);[io,phys]c(m);[phys]d(p);[o,phys]x(n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
+
+gelsd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		integer lwork = -1;
-
-             types(F) %{
-		extern int sgglse_(integer *m, integer *n, integer *p, float *
-		a, integer *lda, float *b, integer *ldb, float *c__,
-		float *d__, float *x, float *work, integer *lwork,
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgglse_(integer *m, integer *n, integer *p, double *
-		a, integer *lda, double *b, integer *ldb, double *c__,
-		double *d__, double *x, double *work, integer *lwork,
-		integer *info);
-		double tmp_work;
-             %}
 
 
-		$TFD(sgglse_,dgglse_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(c),
-		$P(d),
-		$P(x),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
+*gelsd = \&PDL::gelsd;
 
-		$TFD(sgglse_,dgglse_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(c),
-		$P(d),
-		$P(x),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+=head2 gglse
+
+=for sig
+
+  Signature: ([phys]A(m,n); [phys]B(p,n);[io,phys]c(m);[phys]d(p);[o,phys]x(n);int [o,phys]info())
+
+
 
 =for ref
 
@@ -6170,80 +3981,34 @@ which is obtained using a GRQ factorization of the matrices B and A.
  gglse($a, $b, $c, $d, $x, ($info=null));
 
 
-');
-
-pp_def("ggglm",
-       HandleBad => 0,
-	Pars => '[phys]A(n,m); [phys]B(n,p);[phys]d(n);[o,phys]x(m);[o,phys]y(p);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		
+=for bad
+
+gglse ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-		integer lwork = -1;
-
-             types(F) %{
-		extern int sggglm_(integer *n, integer *m, integer *p, float *
-		a, integer *lda, float *b, integer *ldb, float *d__,
-		float *x, float *y, float *work, integer *lwork,
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dggglm_(integer *n, integer *m, integer *p, double *
-		a, integer *lda, double *b, integer *ldb, double *d__,
-		double *x, double *y, double *work, integer *lwork,
-		integer *info);
-		double tmp_work;
-             %}
 
 
-		$TFD(sggglm_,dggglm_)(
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(d),
-		$P(x),
-		$P(y),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
+*gglse = \&PDL::gglse;
 
-		$TFD(sggglm_,dggglm_)(
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(d),
-		$P(x),
-		$P(y),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+=head2 ggglm
+
+=for sig
+
+  Signature: ([phys]A(n,m); [phys]B(n,p);[phys]d(n);[o,phys]x(m);[o,phys]y(p);int [o,phys]info())
+
+
 
 =for ref
 
@@ -6299,41 +4064,34 @@ problem
  $y = zeroes(4);
  ggglm($a, $b, $d, $x, $y,($info=null));
 
-');
+
+
+=for bad
+
+ggglm ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-################################################################################
-#
-#		COMPUTATIONAL LEVEL ROUTINES
-#
-################################################################################
-# TODO IPIV = min(m,n)
-pp_def("getrf",
-       HandleBad => 0,
-	RedoDimsCode => '$SIZE(p) =  $PDL(A)->ndims > 1 ? min($PDL(A)->dims[0], $PDL(A)->dims[1]) : 1;',
-	Pars => '[io,phys]A(m,n); int [o,phys]ipiv(p); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             types(F) %{
 
-		extern int sgetrf_(integer *m, integer *n, float *a, integer *
-		lda, integer *ipiv, integer *info);
-             %}
-             types(D) %{
 
-		extern int dgetrf_(integer *m, integer *n, double *a, integer *
-		lda, integer *ipiv, integer *info);
-             %}
-		$TFD(sgetrf_,dgetrf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(ipiv),
-		$P(info));
-',
-      Doc => '
+
+*ggglm = \&PDL::ggglm;
+
+
+
+
+
+=head2 getrf
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); int [o,phys]ipiv(p); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6374,33 +4132,34 @@ This is the right-looking Level 3 BLAS version of the algorithm.
  $info = null;
  getrf($a, $ipiv, $info);
 
-');
 
-pp_def("getf2",
-       HandleBad => 0,
-	RedoDimsCode => '$SIZE(p) =  $PDL(A)->ndims > 1 ? min($PDL(A)->dims[0], $PDL(A)->dims[1]) : 1;',
-	Pars => '[io,phys]A(m,n); int [o,phys]ipiv(p); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             types(F) %{
 
-		extern int sgetf2_(integer *m, integer *n, float *a, integer *
-		lda, integer *ipiv, integer *info);
-             %}
-             types(D) %{
+=for bad
 
-		extern int dgetf2_(integer *m, integer *n, double *a, integer *
-		lda, integer *ipiv, integer *info);
-             %}
-		$TFD(sgetf2_,dgetf2_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(ipiv),
-		$P(info));
-',
-      Doc => '
+getrf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*getrf = \&PDL::getrf;
+
+
+
+
+
+=head2 getf2
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); int [o,phys]ipiv(p); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6441,63 +4200,34 @@ This is the right-looking Level 2 BLAS version of the algorithm.
  $info = null;
  getf2($a, $ipiv, $info);
 
-');
 
-pp_def("sytrf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int [o,phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-	     integer lwork = -1;
 
-	     types(F) %{
-		extern int ssytrf_(char *uplo, integer *n, float *a, integer *
-		lda, integer *ipiv, float *work, integer *lwork, integer *info);
+=for bad
 
-		float tmp_work;
-             %}
+getf2 ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-             types(D) %{
-		extern int dsytrf_(char *uplo, integer *n, double *a, integer *
-		lda, integer *ipiv, double *work, integer *lwork, integer *info);
 
-		double tmp_work;
-             %}
-		if ($uplo())
-			puplo = \'L\';
+=cut
 
-		$TFD(ssytrf_,dsytrf_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-             	%}
-             	types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-             	%}
-		$TFD(ssytrf_,dsytrf_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		work,
-		&lwork,
-		$P(info));
-		free (work);
-             	}
-',
-      Doc => '
+
+
+
+
+*getf2 = \&PDL::getf2;
+
+
+
+
+
+=head2 sytrf
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int [o,phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6505,7 +4235,7 @@ Computes the factorization of a real symmetric matrix A using
 the Bunch-Kaufman diagonal pivoting method.  The form of the
 factorization is
 
-	A = U*D*U\'  or  A = L*D*L\'
+	A = U*D*U'  or  A = L*D*L'
 	where U (or L) is a product of permutation and unit upper (lower)
 	triangular matrices, and D is symmetric and block diagonal with
 	1-by-1 and 2-by-2 diagonal blocks.
@@ -6548,7 +4278,7 @@ This is the blocked version of the algorithm, calling Level 3 BLAS.
     Further Details
     ===============
 
-    If uplo = 0, then A = U*D*U\', where
+    If uplo = 0, then A = U*D*U', where
        U = P(n)*U(n)* ... *P(k)U(k)* ...,
     i.e., U is a product of terms P(k)*U(k), where k decreases from n to
     1 in steps of 1 or 2, and D is a block diagonal matrix with 1-by-1
@@ -6565,7 +4295,7 @@ This is the blocked version of the algorithm, calling Level 3 BLAS.
     If s = 2, the upper triangle of D(k) overwrites A(k-1,k-1), A(k-1,k),
     and A(k,k), and v overwrites A(1:k-2,k-1:k).
 
-    If uplo = 1, then A = L*D*L\', where
+    If uplo = 1, then A = L*D*L', where
        L = P(1)*L(1)* ... *P(k)*L(k)* ...,
     i.e., L is a product of terms P(k)*L(k), where k increases from 1 to
     n in steps of 1 or 2, and D is a block diagonal matrix with 1-by-1
@@ -6590,36 +4320,34 @@ This is the blocked version of the algorithm, calling Level 3 BLAS.
  # Assume $a is symmetric
  sytrf($a, 0, $ipiv, $info);
 
-');
 
-pp_def("sytf2",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int [o,phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
 
-	     types(F) %{
-		extern int ssytf2_(char *uplo, integer *n, float *a, integer *
-		lda, integer *ipiv, integer *info);
-             %}
+=for bad
 
-             types(D) %{
-		extern int dsytf2_(char *uplo, integer *n, double *a, integer *
-		lda, integer *ipiv, integer *info);
-             %}
-		if ($uplo())
-			puplo = \'L\';
+sytrf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(ssytf2_,dsytf2_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(info));
-',
-      Doc => '
+
+=cut
+
+
+
+
+
+
+*sytrf = \&PDL::sytrf;
+
+
+
+
+
+=head2 sytf2
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int [o,phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6627,7 +4355,7 @@ Computes the factorization of a real symmetric matrix A using
 the Bunch-Kaufman diagonal pivoting method.  The form of the
 factorization is
 
-	A = U*D*U\'  or  A = L*D*L\'
+	A = U*D*U'  or  A = L*D*L'
 	where U (or L) is a product of permutation and unit upper (lower)
 	triangular matrices, and D is symmetric and block diagonal with
 	1-by-1 and 2-by-2 diagonal blocks.
@@ -6677,37 +4405,34 @@ This is the unblocked version of the algorithm, calling Level 2 BLAS.
  # Assume $a is symmetric
  sytf2($a, 0, $ipiv, $info);
 
-');
 
-pp_def("potrf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-             char puplo = \'U\';
+=for bad
 
-	     types(F) %{
+sytf2 ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		extern int spotrf_(char *uplo, integer *n, float *a, integer *
-		lda, integer *info);
-             %}
-             types(D) %{
 
-		extern int dpotrf_(char *uplo, integer *n, double *a, integer *
-		lda, integer *info);
-             %}
-		if ($uplo())
-			puplo = \'L\';
+=cut
 
-		$TFD(spotrf_,dpotrf_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+
+
+
+
+
+*sytf2 = \&PDL::sytf2;
+
+
+
+
+
+=head2 potrf
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6716,8 +4441,8 @@ positive definite matrix A.
 
 The factorization has the form
 
-	A = U\' * U,  if uplo = 0, or
-	A = L  * L\',  if uplo = 1,
+	A = U' * U,  if uplo = 0, or
+	A = L  * L',  if uplo = 1,
 	where U is an upper triangular matrix and L is lower triangular.
 
 This is the block version of the algorithm, calling Level 3 BLAS.
@@ -6737,7 +4462,7 @@ This is the block version of the algorithm, calling Level 3 BLAS.
             triangular part of A is not referenced.
 
             On exit, if info = 0, the factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\'.
+            factorization A = U'*U or A = L*L'.
 
     info:   = 0:  successful exit
             < 0:  if info = -i, the i-th argument had an illegal value
@@ -6751,36 +4476,34 @@ This is the block version of the algorithm, calling Level 3 BLAS.
  # Assume $a is symmetric positive definite
  potrf($a, 0, ($info = null));
 
-');
 
-pp_def("potf2",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
 
-	     types(F) %{
+=for bad
 
-		extern int spotf2_(char *uplo, integer *n, float *a, integer *
-		lda, integer *info);
-             %}
-             types(D) %{
+potrf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		extern int dpotf2_(char *uplo, integer *n, double *a, integer *
-		lda, integer *info);
-             %}
-		if ($uplo())
-			puplo = \'L\';
 
-		$TFD(spotf2_,dpotf2_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*potrf = \&PDL::potrf;
+
+
+
+
+
+=head2 potf2
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6789,8 +4512,8 @@ positive definite matrix A.
 
 The factorization has the form
 
-	A = U\' * U,  if uplo = 0, or
-	A = L  * L\',  if uplo = 1,
+	A = U' * U,  if uplo = 0, or
+	A = L  * L',  if uplo = 1,
 	where U is an upper triangular matrix and L is lower triangular.
 
 This is the unblocked version of the algorithm, calling Level 2 BLAS.
@@ -6810,7 +4533,7 @@ This is the unblocked version of the algorithm, calling Level 2 BLAS.
             triangular part of A is not referenced.
 
             On exit, if info = 0, the factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\'.
+            factorization A = U'*U or A = L*L'.
 
     info:   = 0:  successful exit
             < 0:  if info = -i, the i-th argument had an illegal value
@@ -6824,59 +4547,34 @@ This is the unblocked version of the algorithm, calling Level 2 BLAS.
  # Assume $a is symmetric positive definite
  potf2($a, 0, ($info = null));
 
-');
-
-pp_def("getri",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int [phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             types(F) %{
-
-		extern int sgetri_(integer *n, float *a, integer *lda, integer
-		*ipiv, float *work, integer *lwork, integer *info);
-
-		float tmp_work;
-             %}
-             types(D) %{
-
-		extern int dgetri_(integer *n, double *a, integer *lda, integer
-		*ipiv, double *work, integer *lwork, integer *info);
-
-		double tmp_work;
-             %}
 
 
-		$TFD(sgetri_,dgetri_)(
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
-			float *work = (float *)malloc(lwork *  sizeof(float));
-		%}
-		types(D) %{
-			double *work = (double *)malloc(lwork *  sizeof(double));
-		%}
-		$TFD(sgetri_,dgetri_)(
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
-',
-      Doc => '
+potf2 ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*potf2 = \&PDL::potf2;
+
+
+
+
+
+=head2 getri
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int [phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -6915,47 +4613,39 @@ This method inverts U and then computes inv(A) by solving the system
  }
  print "Inverse of \$a is :\n $a" unless $info;
 
-');
 
-pp_def("sytri",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int [phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-             types(F) %{
 
-		extern int ssytri_(char *uplo, integer *n, float *a, integer *
-		lda, integer *ipiv, float *work, integer *info);
+=for bad
 
-		float *work = (float *)malloc($PRIV(__n_size) *  sizeof(float));
-             %}
-             types(D) %{
+getri ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		extern int dsytri_(char *uplo, integer *n, double *a, integer *
-		lda, integer *ipiv, double *work, integer *info);
 
-		double *work = (double *)malloc($PRIV(__n_size) *  sizeof(double));
-             %}
-		if ($uplo())
-			puplo = \'L\';
+=cut
 
-		$TFD(ssytri_, dsytri_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		work,
-		$P(info));
-		free(work);
-',
-      Doc => '
+
+
+
+
+
+*getri = \&PDL::getri;
+
+
+
+
+
+=head2 sytri
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int [phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
 Computes the inverse of a real symmetric indefinite matrix
-A using the factorization A = U*D*U\' or A = L*D*L\' computed by
+A using the factorization A = U*D*U' or A = L*D*L' computed by
 C<sytrf>.
 
     Arguments
@@ -6963,8 +4653,8 @@ C<sytrf>.
 
     uplo:   Specifies whether the details of the factorization are stored
             as an upper or lower triangular matrix.
-            = 0:  Upper triangular, form is A = U*D*U\';
-            = 1:  Lower triangular, form is A = L*D*L\'.
+            = 0:  Upper triangular, form is A = U*D*U';
+            = 1:  Lower triangular, form is A = L*D*L'.
 
     A:      On entry, the block diagonal matrix D and the multipliers
             used to obtain the factor U or L as computed by sytrf.
@@ -6997,38 +4687,39 @@ C<sytrf>.
  }
  print "Inverse of \$a is :\n $a" unless $info;
 
-');
 
-pp_def("potri",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-	     types(F) %{
-		extern int spotri_(char *uplo, integer *n, float *a, integer *
-		lda, integer *info);
-             %}
-             types(D) %{
-		extern int dpotri_(char *uplo, integer *n, double *a, integer *
-		lda, integer *info);
-             %}
-		if ($uplo())
-			puplo = \'L\';
 
-		$TFD(spotri_,dpotri_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+=for bad
+
+sytri ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*sytri = \&PDL::sytri;
+
+
+
+
+
+=head2 potri
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int [o,phys]info())
+
+
 
 =for ref
 
 Computes the inverse of a real symmetric positive definite
-matrix A using the Cholesky factorization A = U\'*U or A = L*L\'
+matrix A using the Cholesky factorization A = U'*U or A = L*L'
 computed by C<potrf>.
 
     Arguments
@@ -7038,7 +4729,7 @@ computed by C<potrf>.
             = 1:  Lower triangle of A is stored.
 
     A:      On entry, the triangular factor U or L from the Cholesky
-            factorization A = U\'*U or A = L*L\', as computed by
+            factorization A = U'*U or A = L*L', as computed by
             potrf.
             On exit, the upper or lower triangle of the (symmetric)
             inverse of A, overwriting the input factor U or L.
@@ -7060,39 +4751,34 @@ computed by C<potrf>.
  }
  print "Inverse of \$a is :\n $a" unless $info;
 
-');
 
-pp_def("trtri",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int diag(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-             char pdiag = \'N\';
-             types(F) %{
 
-		extern int strtri_(char *uplo, char *diag, integer *n, float *a, integer *
-		lda, integer *info);
-             %}
-             types(D) %{
+=for bad
 
-		extern int dtrtri_(char *uplo, char *diag, integer *n, double *a, integer *
-		lda, integer *info);
-             %}
-		if ($uplo())
-			puplo = \'L\';
-		if ($diag())
-			pdiag = \'U\';
+potri ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(strtri_, dtrtri_)(
-		&puplo,
-		&pdiag,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+
+=cut
+
+
+
+
+
+
+*potri = \&PDL::potri;
+
+
+
+
+
+=head2 trtri
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int diag(); int [o,phys]info())
+
+
 
 =for ref
 
@@ -7136,39 +4822,34 @@ This is the Level 3 BLAS version of the algorithm.
  trtri($a, 1, ($info=null));
  print "Inverse of \$a is :\n transpose($a)" unless $info;
 
-');
 
-pp_def("trti2",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int uplo(); int diag(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-             char pdiag = \'N\';
-             types(F) %{
 
-		extern int strti2_(char *uplo, char *diag, integer *n, float *a, integer *
-		lda, integer *info);
-             %}
-             types(D) %{
+=for bad
 
-		extern int dtrti2_(char *uplo, char *diag, integer *n, double *a, integer *
-		lda, integer *info);
-             %}
-		if ($uplo())
-			puplo = \'L\';
-		if ($diag())
-			pdiag = \'U\';
+trtri ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(strti2_, dtrti2_)(
-		&puplo,
-		&pdiag,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+
+=cut
+
+
+
+
+
+
+*trtri = \&PDL::trtri;
+
+
+
+
+
+=head2 trti2
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int uplo(); int diag(); int [o,phys]info())
+
+
 
 =for ref
 
@@ -7208,46 +4889,40 @@ This is the Level 2 BLAS version of the algorithm.
  trtri2($a, 1, ($info=null));
  print "Inverse of \$a is :\n transpose($a)" unless $info;
 
-');
 
-pp_def("getrs",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int trans(); [io,phys]B(n,m); int [phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-             char transp = \'N\';
-	     types(F) %{
-		extern int sgetrs_(char *trans, integer *n, integer *nrhs,
-		float *a, integer *lda, integer *ipiv, float *b, integer *
-		ldb, integer *info);
-             %}
-             types(D) %{
-		extern int dgetrs_(char *trans, integer *n, integer *nrhs,
-		double *a, integer *lda, integer *ipiv, double *b, integer *
-		ldb, integer *info);
-             %}
-		if($trans())
-			transp = \'T\';
+=for bad
 
-		$TFD(sgetrs_,dgetrs_)(
-		&transp,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+trti2 ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*trti2 = \&PDL::trti2;
+
+
+
+
+
+=head2 getrs
+
+=for sig
+
+  Signature: ([phys]A(n,n); int trans(); [io,phys]B(n,m); int [phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
 Solves a system of linear equations
 
-	A * X = B  or  A\' * X = B
+	A * X = B  or  A' * X = B
 
 with a general N-by-N matrix A using the LU factorization computed
 by getrf.
@@ -7257,7 +4932,7 @@ by getrf.
 
     trans:  Specifies the form of the system of equations:
             = 0:  A * X = B  (No transpose)
-            = 1:  A\'* X = B  (Transpose)
+            = 1:  A'* X = B  (Transpose)
 
     A:      The factors L and U from the factorization A = P*L*U
             as computed by getrf.
@@ -7282,53 +4957,48 @@ by getrf.
  }
  print "X is :\n $b" unless $info;
 
-');
 
-pp_def("sytrs",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo();[io,phys]B(n,m); int [phys]ipiv(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-	     types(F) %{
-		extern int ssytrs_(char *uplo, integer *n, integer *nrhs,
-		float *a, integer *lda, integer *ipiv, float *b, integer *
-		ldb, integer *info);
-             %}
-             types(D) %{
-		extern int dsytrs_(char *uplo, integer *n, integer *nrhs,
-		double *a, integer *lda, integer *ipiv, double *b, integer *
-		ldb, integer *info);
-             %}
-		if($uplo())
-			puplo = \'L\';
 
-		$TFD(ssytrs_,dsytrs_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+=for bad
+
+getrs ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*getrs = \&PDL::getrs;
+
+
+
+
+
+=head2 sytrs
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo();[io,phys]B(n,m); int [phys]ipiv(n); int [o,phys]info())
+
+
 
 =for ref
 
 Solves a system of linear equations A*X = B with a real
-symmetric matrix A using the factorization A = U*D*U\' or
-A = L*D*L\' computed by C<sytrf>.
+symmetric matrix A using the factorization A = U*D*U' or
+A = L*D*L' computed by C<sytrf>.
 
     Arguments
     =========
 
     uplo:   Specifies whether the details of the factorization are stored
             as an upper or lower triangular matrix.
-            = 0:  Upper triangular, form is A = U*D*U\';
-            = 1:  Lower triangular, form is A = L*D*L\'.
+            = 0:  Upper triangular, form is A = U*D*U';
+            = 1:  Lower triangular, form is A = L*D*L'.
 
     A:      The block diagonal matrix D and the multipliers used to
             obtain the factor U or L as computed by sytrf.
@@ -7355,46 +5025,40 @@ A = L*D*L\' computed by C<sytrf>.
  }
  print("X is :\n".transpose($b))unless $info;
 
-');
 
 
-pp_def("potrs",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); [io,phys]B(n,m); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-             char puplo = \'U\';
-	     types(F) %{
-		extern int spotrs_(char *uplo, integer *n, integer *nrhs,
-		float *a, integer *lda, float *b, integer *ldb, integer *
-		info);
-             %}
-             types(D) %{
-		extern int dpotrs_(char *uplo, integer *n, integer *nrhs,
-		double *a, integer *lda, double *b, integer *ldb, integer *
-		info);
-             %}
-		if($uplo())
-			puplo = \'L\';
+sytrs ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(spotrs_,dpotrs_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+
+=cut
+
+
+
+
+
+
+*sytrs = \&PDL::sytrs;
+
+
+
+
+
+=head2 potrs
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); [io,phys]B(n,m); int [o,phys]info())
+
+
 
 =for ref
 
 Solves a system of linear equations A*X = B with a symmetric
 positive definite matrix A using the Cholesky factorization
-A = U\'*U or A = L*L\' computed by C<potrf>.
+A = U'*U or A = L*L' computed by C<potrf>.
 
     Arguments
     =========
@@ -7403,7 +5067,7 @@ A = U\'*U or A = L*L\' computed by C<potrf>.
             = 1:  Lower triangle of A is stored.
 
     A:      The triangular factor U or L from the Cholesky factorization
-            A = U\'*U or A = L*L\', as computed by potrf.
+            A = U'*U or A = L*L', as computed by potrf.
 
     B:      On entry, the right hand side matrix B.
             On exit, the solution matrix X.
@@ -7424,54 +5088,40 @@ A = U\'*U or A = L*L\' computed by C<potrf>.
  }
  print("X is :\n".transpose($b))unless $info;
 
-');
 
-pp_def("trtrs",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); int trans(); int diag();[io,phys]B(n,m); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
-             char ptrans = \'N\';
-             char pdiag = \'N\';
-	     types(F) %{
-		extern int strtrs_(char *uplo, char *trans, char *diag, 
-		integer *n, integer *nrhs,
-		float *a, integer *lda, float *b, integer *
-		ldb, integer *info);
-             %}
-             types(D) %{
-		extern int dtrtrs_(char *uplo, char *trans, char *diag,
-		integer *n, integer *nrhs,
-		double *a, integer *lda, double *b, integer *
-		ldb, integer *info);
-             %}
-		if($uplo())
-			puplo = \'L\';
-		if($trans())
-			ptrans = \'T\';
-		if($diag())
-			pdiag = \'U\';
 
-		$TFD(strtrs_,dtrtrs_)(
-		&puplo,
-		&ptrans,
-		&pdiag,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
-',
-      Doc => '
+=for bad
+
+potrs ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*potrs = \&PDL::potrs;
+
+
+
+
+
+=head2 trtrs
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); int trans(); int diag();[io,phys]B(n,m); int [o,phys]info())
+
+
 
 =for ref
 
 Solves a triangular system of the form   
 
-	A * X = B  or  A\' * X = B,   
+	A * X = B  or  A' * X = B,   
 	
 	where A is a triangular matrix of order N, and B is an N-by-NRHS   
 	matrix.  
@@ -7520,62 +5170,43 @@ A check is made to verify that A is nonsingular.
  trtrs($a, 0, 0, 0, $b, $info);
  print("X is :\n".transpose($b))unless $info;
 
-');
 
 
-pp_def("latrs",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); int trans(); int diag(); int normin();[io,phys]x(n); [o,phys]scale();[io,phys]cnorm(n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-             char puplo = \'U\';
-             char ptrans = \'N\';
-             char pdiag = \'N\';
-             char pnormin = \'N\';
+trtrs ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-	     types(F) %{
-		extern int slatrs_(char *uplo, char *trans, char *diag, char *
-		normin, integer *n, float *a, integer *lda, float *x, 
-		float *scale, float *cnorm, integer *info);
-             %}
-             types(D) %{
-		extern int dlatrs_(char *uplo, char *trans, char *diag, char *
-		normin, integer *n, double *a, integer *lda, double *x, 
-		double *scale, double *cnorm, integer *info);
-             %}
-		if($uplo())
-			puplo = \'L\';
-		if($trans())
-			ptrans = \'T\';
-		if($diag())
-			pdiag = \'U\';
-		if($normin())
-			pnormin = \'Y\';
 
-		$TFD(slatrs_,dlatrs_)(
-		&puplo,
-		&ptrans,
-		&pdiag,
-		&pnormin,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(x),
-		$P(scale),
-		$P(cnorm),
-		$P(info));
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*trtrs = \&PDL::trtrs;
+
+
+
+
+
+=head2 latrs
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); int trans(); int diag(); int normin();[io,phys]x(n); [o,phys]scale();[io,phys]cnorm(n);int [o,phys]info())
+
+
 
 =for ref
 
 Solves one of the triangular systems   
 
-	A *x = s*b  or  A\'*x = s*b   
+	A *x = s*b  or  A'*x = s*b   
 
 with scaling to prevent overflow.  Here A is an upper or lower   
-triangular matrix, A\' denotes the transpose of A, x and b are   
+triangular matrix, A' denotes the transpose of A, x and b are   
 n-element vectors, and s is a scaling factor, usually less than   
 or equal to 1, chosen so that the components of x will be less than   
 the overflow threshold.  If the unscaled problem will not cause   
@@ -7633,16 +5264,16 @@ the computed bound is greater than a large constant, x is scaled to
 prevent overflow, but if the bound overflows, x is set to 0, x(j) to   
 1, and scale to 0, and a non-trivial solution to A*x = 0 is found.   
 
-Similarly, a row-wise scheme is used to solve A\'*x = b.  The basic   
+Similarly, a row-wise scheme is used to solve A'*x = b.  The basic   
 algorithm for A upper triangular is   
 
          for j = 1, ..., n   
-              x(j) := ( b(j) - A[1:j-1,j]\' * x[1:j-1] ) / A(j,j)   
+              x(j) := ( b(j) - A[1:j-1,j]' * x[1:j-1] ) / A(j,j)   
          end   
 
 We simultaneously compute two bounds   
 
-         G(j) = bound on ( b(i) - A[1:i-1,i]\' * x[1:i-1] ), 1<=i<=j   
+         G(j) = bound on ( b(i) - A[1:i-1,i]' * x[1:i-1] ), 1<=i<=j   
          M(j) = bound on x(i), 1<=i<=j   
 
 The initial values are G(0) = 0, M(0) = max{b(i), i=1,..,n}, and we   
@@ -7666,7 +5297,7 @@ than max(underflow, 1/overflow).
 
     trans:  Specifies the operation applied to A.   
             = 0:  Solve A * x = s*b  (No transpose)   
-            = 1:  Solve A\'* x = s*b  (Transpose)   
+            = 1:  Solve A'* x = s*b  (Transpose)   
 
     diag:   Specifies whether or not the matrix A is unit triangular.   
             = 0:  Non-unit triangular   
@@ -7690,7 +5321,7 @@ than max(underflow, 1/overflow).
             On exit, x is overwritten by the solution vector x.   
 
     scale:  The scaling factor s for the triangular system   
-               A * x = s*b  or  A\'* x = s*b.   
+               A * x = s*b  or  A'* x = s*b.   
             If scale = 0, the matrix A is singular or badly scaled, and   
             the vector x is an exact or approximate solution to A*x = 0.   
 
@@ -7720,49 +5351,34 @@ than max(underflow, 1/overflow).
  $cnorm = zeroes(100);
  latrs($a, 0, 0, 0, 0,$b, $scale, $cnorm,$info);
 
-');
+
+
+=for bad
+
+latrs ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-pp_def("gecon",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int norm(); [phys]anorm(); [o,phys]rcond();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char pnorm = \'I\';
 
-	     types(F) %{
-		extern int sgecon_(char *norm, integer *n, float *a, integer *
-		lda, float *anorm, float *rcond, float *work, integer *
-		iwork, integer *info);
-		float *work = (float *) malloc(($PRIV(__n_size) * 4) *  sizeof(float));
-             %}
-             types(D) %{
-		extern int dgecon_(char *norm, integer *n, double *a, integer *
-		lda, double *anorm, double *rcond, double *work, integer *
-		iwork, integer *info);
-		double *work = (double *) malloc(($PRIV(__n_size)*4) *  sizeof(double));
-             %}
-		integer *iwork = (integer *) malloc($PRIV(__n_size) *  sizeof(integer));
 
-		if($norm())
-			pnorm = \'O\';
 
-		$TFD(sgecon_,dgecon_)(
-		&pnorm,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(anorm),
-		$P(rcond),
-		work,
-		iwork,
-		$P(info));
-		free (work);
-		free(iwork);
+*latrs = \&PDL::latrs;
 
-',
-      Doc => '
+
+
+
+
+=head2 gecon
+
+=for sig
+
+  Signature: ([phys]A(n,n); int norm(); [phys]anorm(); [o,phys]rcond();int [o,phys]info())
+
+
 
 =for ref
 
@@ -7805,54 +5421,40 @@ condition number is computed as
  $info = null;
  getrf($a, $ipiv, $info);
  ($rcond, $info) = gecon($a, 1, $anorm) unless $info != 0;
-');
 
-pp_def("sycon",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); int ipiv(n); [phys]anorm(); [o,phys]rcond();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-             char puplo = \'U\';
 
-	     types(F) %{
-		extern int ssycon_(char *uplo, integer *n, float *a, integer *
-		lda, integer *ipiv, float *anorm, float *rcond, float *
-		work, integer *iwork, integer *info);
-		float *work = (float *) malloc(($PRIV(__n_size) * 2) *  sizeof(float));
-             %}
-             types(D) %{
-		extern int dsycon_(char *uplo, integer *n, double *a, integer *
-		lda, integer *ipiv, double *anorm, double *rcond, double *
-		work, integer *iwork, integer *info);
-		double *work = (double *) malloc(($PRIV(__n_size)*2) *  sizeof(double));
-             %}
-		integer *iwork = (integer *) malloc($PRIV(__n_size) *  sizeof(integer));
+=for bad
 
-		if($uplo())
-			puplo = \'L\';
+gecon ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(ssycon_,dsycon_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ipiv),
-		$P(anorm),
-		$P(rcond),
-		work,
-		iwork,
-		$P(info));
-		free (work);
-		free(iwork);
 
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*gecon = \&PDL::gecon;
+
+
+
+
+
+=head2 sycon
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); int ipiv(n); [phys]anorm(); [o,phys]rcond();int [o,phys]info())
+
+
 
 =for ref
 
 Estimates the reciprocal of the condition number (in the
 1-norm) of a real symmetric matrix A using the factorization
-A = U*D*U\' or A = L*D*L\' computed by C<sytrf>.
+A = U*D*U' or A = L*D*L' computed by C<sytrf>.
 
 An estimate is obtained for norm(inv(A)), and the reciprocal of the
 condition number is computed as rcond = 1 / (anorm * norm(inv(A))).
@@ -7862,8 +5464,8 @@ condition number is computed as rcond = 1 / (anorm * norm(inv(A))).
 
     uplo:   Specifies whether the details of the factorization are stored
             as an upper or lower triangular matrix.
-            = 0:  Upper triangular, form is A = U*D*U\';
-            = 1:  Lower triangular, form is A = L*D*L\'.
+            = 0:  Upper triangular, form is A = U*D*U';
+            = 1:  Lower triangular, form is A = L*D*L'.
 
     A:      The block diagonal matrix D and the multipliers used to
             obtain the factor U or L as computed by sytrf.
@@ -7890,54 +5492,40 @@ condition number is computed as rcond = 1 / (anorm * norm(inv(A))).
  $info = null;
  sytrf($a, 1,$ipiv, $info);
  ($rcond, $info) = sycon($a, 1, $anorm) unless $info != 0;
-');
 
-pp_def("pocon",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); [phys]anorm(); [o,phys]rcond();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-             char puplo = \'U\';
+=for bad
 
-	     types(F) %{
-		extern int spocon_(char *uplo, integer *n, float *a, integer *
-		lda, float *anorm, float *rcond, float *work, integer *
-		iwork, integer *info);
-		float *work = (float *) malloc(($PRIV(__n_size) * 3) *  sizeof(float));
-             %}
-             types(D) %{
-		extern int dpocon_(char *uplo, integer *n, double *a, integer *
-		lda, double *anorm, double *rcond, double *work, integer *
-		iwork, integer *info);
-		double *work = (double *) malloc(($PRIV(__n_size)*3) *  sizeof(double));
-             %}
-		integer *iwork = (integer *) malloc($PRIV(__n_size) *  sizeof(integer));
+sycon ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		if($uplo())
-			puplo = \'L\';
 
-		$TFD(spocon_,dpocon_)(
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(anorm),
-		$P(rcond),
-		work,
-		iwork,
-		$P(info));
-		free (work);
-		free(iwork);
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*sycon = \&PDL::sycon;
+
+
+
+
+
+=head2 pocon
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); [phys]anorm(); [o,phys]rcond();int [o,phys]info())
+
+
 
 =for ref
 
 Estimates the reciprocal of the condition number (in the
 1-norm) of a real symmetric positive definite matrix using the
-Cholesky factorization A = U\'*U or A = L*L\' computed by C<potrf>.
+Cholesky factorization A = U'*U or A = L*L' computed by C<potrf>.
 
 An estimate is obtained for norm(inv(A)), and the reciprocal of the
 condition number is computed as rcond = 1 / (anorm * norm(inv(A))).
@@ -7949,7 +5537,7 @@ condition number is computed as rcond = 1 / (anorm * norm(inv(A))).
             = 1:  Lower triangle of A is stored.
 
     A:      The triangular factor U or L from the Cholesky factorization
-            A = U\'*U or A = L*L\', as computed by potrf.
+            A = U'*U or A = L*L', as computed by potrf.
 
     anorm:  The 1-norm of the matrix A.
 
@@ -7969,52 +5557,34 @@ condition number is computed as rcond = 1 / (anorm * norm(inv(A))).
  $info = null;
  potrf($a,  0, $info);
  ($rcond, $info) = pocon($a, 1, $anorm) unless $info != 0;
-');
 
-pp_def("trcon",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int norm();int uplo();int diag(); [o,phys]rcond();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-             char puplo = \'U\';
-             char pdiag = \'N\';
-             char pnorm = \'I\';
-	     types(F) %{
-		extern int strcon_(char *norm, char *uplo, char *diag,integer *n, float *a, integer *
-		lda, float *rcond, float *work, integer *iwork, integer *info);
-		float *work = (float *) malloc(($PRIV(__n_size) * 3) *  sizeof(float));
-             %}
-             types(D) %{
-		extern int dtrcon_(char *norm, char *uplo, char *diag, integer *n, double *a, integer *
-		lda, double *rcond, double * work, integer *iwork, integer *info);
-		double *work = (double *) malloc(($PRIV(__n_size)*3) *  sizeof(double));
-             %}
-		integer *iwork = (integer *) malloc($PRIV(__n_size) *  sizeof(integer));
+=for bad
 
-		if($uplo())
-			puplo = \'L\';
-		if($diag())
-			pdiag = \'U\';
-		if($norm())
-			pnorm = \'O\';
+pocon ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(strcon_,dtrcon_)(
-		&pnorm,
-		&puplo,
-		&pdiag,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(rcond),
-		work,
-		iwork,
-		$P(info));
-		free (work);
-		free(iwork);
 
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*pocon = \&PDL::pocon;
+
+
+
+
+
+=head2 trcon
+
+=for sig
+
+  Signature: ([phys]A(n,n); int norm();int uplo();int diag(); [o,phys]rcond();int [o,phys]info())
+
+
 
 =for ref
 
@@ -8064,65 +5634,34 @@ computed as
  $a = random (float, 100, 100);
  $info = null;
  ($rcond, $info) = trcon($a, 1, 1, 0) unless $info != 0;
-');
 
 
-pp_def("geqp3",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); int [io,phys]jpvt(n); [o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
+=for bad
 
-	     types(F) %{
-		extern int sgeqp3_(integer *m, integer *n, float *a, integer *
-		lda, integer *jpvt, float *tau, float *work, integer *lwork,
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgeqp3_(integer *m, integer *n, double *a, integer *
-		lda, integer *jpvt, double *tau, double *work, integer *lwork,
-		 integer *info);
-		 double tmp_work;
-             %}
+trcon ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(sgeqp3_,dgeqp3_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(jpvt),
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+=cut
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgeqp3_,dgeqp3_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(jpvt),
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+*trcon = \&PDL::trcon;
+
+
+
+
+
+=head2 geqp3
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); int [io,phys]jpvt(n); [o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8137,7 +5676,7 @@ The matrix Q is represented as a product of elementary reflectors
 
 Each H(i) has the form   
 
-	H(i) = I - tau * v * v\'   
+	H(i) = I - tau * v * v'   
 
 	where tau is a real/complex scalar, and v is a real/complex vector   
     	with v(1:i-1) = 0 and v(i) = 1; v(i+1:m) is stored on exit in   
@@ -8171,62 +5710,34 @@ Each H(i) has the form
  $tau = zeroes(float, 50);
  $jpvt = zeroes(long, 50);
  geqp3($a, $jpvt, $tau, $info);
-');
 
-pp_def("geqrf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sgeqrf_(integer *m, integer *n, float *a, integer *
-		lda, float *tau, float *work, integer *lwork,
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgeqrf_(integer *m, integer *n, double *a, integer *
-		lda, double *tau, double *work, integer *lwork,
-		 integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sgeqrf_,dgeqrf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+geqp3 ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgeqrf_,dgeqrf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*geqp3 = \&PDL::geqp3;
+
+
+
+
+
+=head2 geqrf
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8241,7 +5752,7 @@ The matrix Q is represented as a product of elementary reflectors
 
 Each H(i) has the form   
 
-	H(i) = I - tau * v * v\'   
+	H(i) = I - tau * v * v'   
 
 	where tau is a real/complex scalar, and v is a real/complex vector   
 	with v(1:i-1) = 0 and v(i) = 1; v(i+1:m) is stored on exit in   
@@ -8268,64 +5779,34 @@ Each H(i) has the form
  $info = null;
  $tau = zeroes(float, 50);
  geqrf($a, $tau, $info);
-');
 
-pp_def("orgqr",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sorgqr_(integer *m, integer *n, integer *k, float *
-		a, integer *lda, float *tau, float *work, integer *lwork, 
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dorgqr_(integer *m, integer *n, integer *k, double *
-		a, integer *lda, double *tau, double *work, integer *lwork, 
-		integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sorgqr_,dorgqr_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+geqrf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sorgqr_,dorgqr_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*geqrf = \&PDL::geqrf;
+
+
+
+
+
+=head2 orgqr
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8360,78 +5841,34 @@ reflectors of order M
  $tau = zeroes(float, 50);
  geqrf($a, $tau, $info);
  orgqr($a, $tau, $info) unless $info != 0;
-');
 
 
-pp_def("ormqr",
-       HandleBad => 0,
-	Pars => '[phys]A(p,k); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		char ptrans = \'N\', pside = \'L\';
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sormqr_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, float *a, integer *lda, float *tau, float *
-		c__, integer *ldc, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dormqr_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, double *a, integer *lda, double *tau, double *
-		c__, integer *ldc, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
-		if($trans())
-			ptrans = \'T\';
-		if($side())
-			pside = \'R\';
+=for bad
 
-		$TFD(sormqr_,dormqr_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__p_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+orgqr ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
+=cut
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sormqr_,dormqr_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__p_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+
+*orgqr = \&PDL::orgqr;
+
+
+
+
+
+=head2 ormqr
+
+=for sig
+
+  Signature: ([phys]A(p,k); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info())
+
+
 
 =for ref
 
@@ -8439,7 +5876,7 @@ Overwrites the general real M-by-N matrix C with
 
                     side = 0     side = 1   
     trans = 0:      Q * C          C * Q   
-    trans = 1:      Q\' * C       C * Q\'   
+    trans = 1:      Q' * C       C * Q'   
 
     where Q is a real orthogonal matrix defined as the product of k   
     elementary reflectors   
@@ -8454,11 +5891,11 @@ if C<side> = 1.
     Arguments   
     =========   
 
-    side:   = 0: apply Q or Q\' from the Left;   
-            = 1: apply Q or Q\' from the Right.   
+    side:   = 0: apply Q or Q' from the Left;   
+            = 1: apply Q or Q' from the Right.   
 
     trans:  = 0:  No transpose, apply Q;   
-            = 1:  Transpose, apply Q\'.   
+            = 1:  Transpose, apply Q'.   
 
     A:      The i-th column must contain the vector which defines the   
             elementary reflector H(i), for i = 1,2,...,k, as returned by   
@@ -8469,7 +5906,7 @@ if C<side> = 1.
             reflector H(i), as returned by geqrf or geqp3.   
 
     C:      On entry, the M-by-N matrix C.   
-            On exit, C is overwritten by Q*C or Q\'*C or C*Q\' or C*Q.   
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
 
     info:   = 0:  successful exit   
             < 0:  if info = -i, the i-th argument had an illegal value 
@@ -8487,60 +5924,34 @@ if C<side> = 1.
  $c->reshape(70,100);
  $c = transpose($c);
  ormqr($a, $tau, $c, $info);
-');
 
-pp_def("gelqf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sgelqf_(integer *m, integer *n, float *a, integer *
-		lda, float *tau, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgelqf_(integer *m, integer *n, double *a, integer *
-		lda, double *tau, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sgelqf_,dgelqf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+ormqr ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgelqf_,dgelqf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*ormqr = \&PDL::ormqr;
+
+
+
+
+
+=head2 gelqf
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8554,7 +5965,7 @@ The matrix Q is represented as a product of elementary reflectors
 
 Each H(i) has the form   
 
-	H(i) = I - tau * v * v\'   
+	H(i) = I - tau * v * v'   
 
 	where tau is a real scalar, and v is a real vector with   
 	v(1:i-1) = 0 and v(i) = 1; v(i+1:n) is stored on exit in A(i,i+1:n),   
@@ -8581,64 +5992,34 @@ Each H(i) has the form
  $info = null;
  $tau = zeroes(float, 50);
  gelqf($a, $tau, $info);
-');
 
-pp_def("orglq",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sorglq_(integer *m, integer *n, integer *k, float *
-		a, integer *lda, float *tau, float *work, integer *lwork, 
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dorglq_(integer *m, integer *n, integer *k, double *
-		a, integer *lda, double *tau, double *work, integer *lwork, 
-		integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sorglq_,dorglq_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+gelqf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sorglq_,dorglq_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*gelqf = \&PDL::gelqf;
+
+
+
+
+
+=head2 orglq
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8672,77 +6053,34 @@ reflectors of order N
  $tau = zeroes(float, 50);
  gelqf($a, $tau, $info);
  orglq($a, $tau, $info) unless $info != 0;
-');
 
-pp_def("ormlq",
-       HandleBad => 0,
-	Pars => '[phys]A(k,p); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		char ptrans = \'N\', pside = \'L\';
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sormlq_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, float *a, integer *lda, float *tau, float *
-		c__, integer *ldc, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dormlq_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, double *a, integer *lda, double *tau, double *
-		c__, integer *ldc, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
-		if($trans())
-			ptrans = \'T\';
-		if($side())
-			pside = \'R\';
 
-		$TFD(sormlq_,dormlq_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__k_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+orglq ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sormlq_,dormlq_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__k_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*orglq = \&PDL::orglq;
+
+
+
+
+
+=head2 ormlq
+
+=for sig
+
+  Signature: ([phys]A(k,p); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info())
+
+
 
 =for ref
 
@@ -8750,7 +6088,7 @@ Overwrites the general real M-by-N matrix C with
 
                     side = 0     side = 1   
     trans = 0:      Q * C          C * Q   
-    trans = 1:      Q\' * C       C * Q\'   
+    trans = 1:      Q' * C       C * Q'   
 
     where Q is a real orthogonal matrix defined as the product of k   
     elementary reflectors   
@@ -8765,11 +6103,11 @@ if C<side> = 1.
     Arguments   
     =========   
 
-    side:   = 0: apply Q or Q\' from the Left;   
-            = 1: apply Q or Q\' from the Right.   
+    side:   = 0: apply Q or Q' from the Left;   
+            = 1: apply Q or Q' from the Right.   
 
     trans:  = 0:  No transpose, apply Q;   
-            = 1:  Transpose, apply Q\'.   
+            = 1:  Transpose, apply Q'.   
 
     A:      The i-th row must contain the vector which defines the   
             elementary reflector H(i), for i = 1,2,...,k, as returned by   
@@ -8780,7 +6118,7 @@ if C<side> = 1.
             reflector H(i), as returned by gelqf.   
 
     C:      On entry, the M-by-N matrix C.   
-            On exit, C is overwritten by Q*C or Q\'*C or C*Q\' or C*Q.   
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
 
     info:   = 0:  successful exit   
             < 0:  if info = -i, the i-th argument had an illegal value
@@ -8798,60 +6136,34 @@ if C<side> = 1.
  $c->reshape(70,100);
  $c = transpose($c);
  ormlq($a, $tau, $c, $info);
-');
 
-pp_def("geqlf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sgeqlf_(integer *m, integer *n, float *a, integer *
-		lda, float *tau, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgeqlf_(integer *m, integer *n, double *a, integer *
-		lda, double *tau, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sgeqlf_,dgeqlf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+ormlq ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgeqlf_,dgeqlf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*ormlq = \&PDL::ormlq;
+
+
+
+
+
+=head2 geqlf
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8865,7 +6177,7 @@ The matrix Q is represented as a product of elementary reflectors
 
 Each H(i) has the form   
 
-	H(i) = I - tau * v * v\'   
+	H(i) = I - tau * v * v'   
 
 	where tau is a real scalar, and v is a real vector with   
 	v(m-k+i+1:m) = 0 and v(m-k+i) = 1; v(1:m-k+i-1) is stored on exit in   
@@ -8894,64 +6206,34 @@ Each H(i) has the form
  $info = null;
  $tau = zeroes(float, 50);
  geqlf($a, $tau, $info);
-');
 
-pp_def("orgql",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sorgql_(integer *m, integer *n, integer *k, float *
-		a, integer *lda, float *tau, float *work, integer *lwork, 
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dorgql_(integer *m, integer *n, integer *k, double *
-		a, integer *lda, double *tau, double *work, integer *lwork, 
-		integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sorgql_,dorgql_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+geqlf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sorgql_,dorgql_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*geqlf = \&PDL::geqlf;
+
+
+
+
+
+=head2 orgql
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -8986,77 +6268,34 @@ reflectors of order M
  $tau = zeroes(float, 50);
  geqlf($a, $tau, $info);
  orgql($a, $tau, $info) unless $info != 0;
-');
 
-pp_def("ormql",
-       HandleBad => 0,
-	Pars => '[phys]A(p,k); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		char ptrans = \'N\', pside = \'L\';
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sormql_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, float *a, integer *lda, float *tau, float *
-		c__, integer *ldc, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dormql_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, double *a, integer *lda, double *tau, double *
-		c__, integer *ldc, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
-		if($trans())
-			ptrans = \'T\';
-		if($side())
-			pside = \'R\';
 
-		$TFD(sormql_,dormql_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__p_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+orgql ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sormql_,dormql_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__p_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*orgql = \&PDL::orgql;
+
+
+
+
+
+=head2 ormql
+
+=for sig
+
+  Signature: ([phys]A(p,k); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info())
+
+
 
 =for ref
 
@@ -9064,7 +6303,7 @@ Overwrites the general real M-by-N matrix C with
 
                     side = 0     side = 1   
     trans = 0:      Q * C          C * Q   
-    trans = 1:      Q\' * C       C * Q\'   
+    trans = 1:      Q' * C       C * Q'   
 
     where Q is a real orthogonal matrix defined as the product of k   
     elementary reflectors   
@@ -9079,11 +6318,11 @@ if C<side> = 1.
     Arguments   
     =========   
 
-    side:   = 0: apply Q or Q\' from the Left;   
-            = 1: apply Q or Q\' from the Right.   
+    side:   = 0: apply Q or Q' from the Left;   
+            = 1: apply Q or Q' from the Right.   
 
     trans:  = 0:  No transpose, apply Q;   
-            = 1:  Transpose, apply Q\'.   
+            = 1:  Transpose, apply Q'.   
 
     A:      The i-th row must contain the vector which defines the   
             elementary reflector H(i), for i = 1,2,...,k, as returned by   
@@ -9094,7 +6333,7 @@ if C<side> = 1.
             reflector H(i), as returned by geqlf.   
 
     C:      On entry, the M-by-N matrix C.   
-            On exit, C is overwritten by Q*C or Q\'*C or C*Q\' or C*Q.   
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
 
     info:   = 0:  successful exit   
             < 0:  if info = -i, the i-th argument had an illegal value
@@ -9112,60 +6351,34 @@ if C<side> = 1.
  $c->reshape(70,100);
  $c = transpose($c);
  ormql($a, $tau, $c, $info);
-');
 
-pp_def("gerqf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sgerqf_(integer *m, integer *n, float *a, integer *
-		lda, float *tau, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgerqf_(integer *m, integer *n, double *a, integer *
-		lda, double *tau, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sgerqf_,dgerqf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+ormql ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgerqf_,dgerqf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*ormql = \&PDL::ormql;
+
+
+
+
+
+=head2 gerqf
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -9179,7 +6392,7 @@ The matrix Q is represented as a product of elementary reflectors
 
 Each H(i) has the form   
 
-	H(i) = I - tau * v * v\'   
+	H(i) = I - tau * v * v'   
 
 	where tau is a real scalar, and v is a real vector with   
 	v(n-k+i+1:n) = 0 and v(n-k+i) = 1; v(1:n-k+i-1) is stored on exit in   
@@ -9209,64 +6422,34 @@ Each H(i) has the form
  $info = null;
  $tau = zeroes(float, 50);
  gerqf($a, $tau, $info);
-');
 
-pp_def("orgrq",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sorgrq_(integer *m, integer *n, integer *k, float *
-		a, integer *lda, float *tau, float *work, integer *lwork, 
-		integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dorgrq_(integer *m, integer *n, integer *k, double *
-		a, integer *lda, double *tau, double *work, integer *lwork, 
-		integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(sorgrq_,dorgrq_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+gerqf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sorgrq_,dorgrq_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*gerqf = \&PDL::gerqf;
+
+
+
+
+
+=head2 orgrq
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -9301,77 +6484,34 @@ reflectors of order N
  $tau = zeroes(float, 50);
  gerqf($a, $tau, $info);
  orgrq($a, $tau, $info) unless $info != 0;
-');
 
-pp_def("ormrq",
-       HandleBad => 0,
-	Pars => '[phys]A(k,p); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		char ptrans = \'N\', pside = \'L\';
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sormrq_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, float *a, integer *lda, float *tau, float *
-		c__, integer *ldc, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dormrq_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, double *a, integer *lda, double *tau, double *
-		c__, integer *ldc, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
-		if($trans())
-			ptrans = \'T\';
-		if($side())
-			pside = \'R\';
 
-		$TFD(sormrq_,dormrq_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__k_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+orgrq ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sormrq_,dormrq_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		$P(A),
-		&(integer){$PRIV(__k_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*orgrq = \&PDL::orgrq;
+
+
+
+
+
+=head2 ormrq
+
+=for sig
+
+  Signature: ([phys]A(k,p); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info())
+
+
 
 =for ref
 
@@ -9379,7 +6519,7 @@ Overwrites the general real M-by-N matrix C with
 
                     side = 0     side = 1   
     trans = 0:      Q * C          C * Q   
-    trans = 1:      Q\' * C       C * Q\'   
+    trans = 1:      Q' * C       C * Q'   
 
     where Q is a real orthogonal matrix defined as the product of k   
     elementary reflectors   
@@ -9394,11 +6534,11 @@ if C<side> = 1.
     Arguments   
     =========   
 
-    side:   = 0: apply Q or Q\' from the Left;   
-            = 1: apply Q or Q\' from the Right.   
+    side:   = 0: apply Q or Q' from the Left;   
+            = 1: apply Q or Q' from the Right.   
 
     trans:  = 0:  No transpose, apply Q;   
-            = 1:  Transpose, apply Q\'.   
+            = 1:  Transpose, apply Q'.   
 
     A:      The i-th row must contain the vector which defines the   
             elementary reflector H(i), for i = 1,2,...,k, as returned by   
@@ -9409,7 +6549,7 @@ if C<side> = 1.
             reflector H(i), as returned by gerqf.   
 
     C:      On entry, the M-by-N matrix C.   
-            On exit, C is overwritten by Q*C or Q\'*C or C*Q\' or C*Q.   
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
 
     info:   = 0:  successful exit   
             < 0:  if info = -i, the i-th argument had an illegal value
@@ -9427,60 +6567,34 @@ if C<side> = 1.
  $c->reshape(70,100);
  $c = transpose($c);
  ormrq($a, $tau, $c, $info);
-');
 
-pp_def("tzrzf",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int stzrzf_(integer *m, integer *n, float *a, integer *
-		lda, float *tau, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dtzrzf_(integer *m, integer *n, double *a, integer *
-		lda, double *tau, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
 
-		$TFD(stzrzf_,dtzrzf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+=for bad
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+ormrq ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(stzrzf_,dtzrzf_)(
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*ormrq = \&PDL::ormrq;
+
+
+
+
+
+=head2 tzrzf
+
+=for sig
+
+  Signature: ([io,phys]A(m,n); [o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -9494,7 +6608,7 @@ The upper trapezoidal matrix A is factored as
 	where Z is an N-by-N orthogonal matrix and R is an M-by-M upper   
 	triangular matrix.   
 
-The factorization is obtained by Householder\'s method.  The kth   
+The factorization is obtained by Householder's method.  The kth   
 transformation matrix, Z( k ), which is used to introduce zeros into   
 the ( m - k + 1 )th row of A, is given in the form   
 
@@ -9503,7 +6617,7 @@ the ( m - k + 1 )th row of A, is given in the form
 
     where   
 
-       T( k ) = I - tau*u( k )*u( k )\',   u( k ) = (   1    ),   
+       T( k ) = I - tau*u( k )*u( k )',   u( k ) = (   1    ),   
                                                     (   0    )   
                                                     ( z( k ) )   
 
@@ -9542,81 +6656,34 @@ Z is given by
  $info = null;
  $tau = zeroes(float, 50);
  tzrzf($a, $tau, $info);
-');
 
-pp_def("ormrz",
-       HandleBad => 0,
-	Pars => '[phys]A(k,p); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		char ptrans = \'N\', pside = \'L\';
-		integer lwork = -1;
-		integer kk =  $SIZE(p) - $SIZE(k);
-             
-	     types(F) %{
-		extern int sormrz_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, integer *l, float *a, integer *lda, float *tau, float *
-		c__, integer *ldc, float *work, integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dormrz_(char *side, char *trans, integer *m, integer *n, 
-		integer *k, integer *l, double *a, integer *lda, double *tau, double *
-		c__, integer *ldc, double *work, integer *lwork, integer *info);
-		 double tmp_work;
-             %}
-		if($trans())
-			ptrans = \'T\';
-		if($side())
-			pside = \'R\';
+=for bad
 
-		$TFD(sormrz_,dormrz_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		&kk,
-		$P(A),
-		&(integer){$PRIV(__k_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
+tzrzf ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
+=cut
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sormrz_,dormrz_)(
-		&pside,
-		&ptrans,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__k_size)},
-		&kk,
-		$P(A),
-		&(integer){$PRIV(__k_size)},
-		$P(tau),
-		$P(C),
-		&(integer){$PRIV(__m_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+
+*tzrzf = \&PDL::tzrzf;
+
+
+
+
+
+=head2 ormrz
+
+=for sig
+
+  Signature: ([phys]A(k,p); int side(); int trans(); [phys]tau(k); [io,phys]C(m,n);int [o,phys]info())
+
+
 
 =for ref
 
@@ -9624,7 +6691,7 @@ Overwrites the general real M-by-N matrix C with
 
                     side = 0     side = 1   
     trans = 0:      Q * C          C * Q   
-    trans = 1:      Q\' * C       C * Q\'   
+    trans = 1:      Q' * C       C * Q'   
 
     where Q is a real orthogonal matrix defined as the product of k   
     elementary reflectors   
@@ -9639,11 +6706,11 @@ if C<side> = 1.
     Arguments   
     =========   
 
-    side:   = 0: apply Q or Q\' from the Left;   
-            = 1: apply Q or Q\' from the Right.   
+    side:   = 0: apply Q or Q' from the Left;   
+            = 1: apply Q or Q' from the Right.   
 
     trans:  = 0:  No transpose, apply Q;   
-            = 1:  Transpose, apply Q\'.   
+            = 1:  Transpose, apply Q'.   
 
     A:      The i-th row must contain the vector which defines the   
             elementary reflector H(i), for i = 1,2,...,k, as returned by   
@@ -9654,7 +6721,7 @@ if C<side> = 1.
             reflector H(i), as returned by tzrzf.   
 
     C:      On entry, the M-by-N matrix C.   
-            On exit, C is overwritten by Q*C or Q\'*C or C*Q\' or C*Q.  
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.  
 
     info:   = 0:  successful exit   
             < 0:  if info = -i, the i-th argument had an illegal value
@@ -9672,71 +6739,39 @@ if C<side> = 1.
  $c->reshape(70,100);
  $c = transpose($c);
  ormrz($a, $tau, $c, $info);
-');
 
 
-pp_def("gehrd",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int [phys]ilo();int [phys]ihi();[o,phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sgehrd_(integer *n, integer *ilo, integer *ihi, 
-		float *a, integer *lda, float *tau, float *work, 
-		integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dgehrd_(integer *n, integer *ilo, integer *ihi, 
-		double *a, integer *lda, double *tau, double *work, 
-		integer *lwork, integer *info);
-		 double tmp_work;
-             %}
+ormrz ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(sgehrd_,dgehrd_)(
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
+=cut
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sgehrd_,dgehrd_)(
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+*ormrz = \&PDL::ormrz;
+
+
+
+
+
+=head2 gehrd
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int [phys]ilo();int [phys]ihi();[o,phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
 Reduces a real general matrix A to upper Hessenberg form H by   
-an orthogonal similarity transformation:  Q\' * A * Q = H .   
+an orthogonal similarity transformation:  Q' * A * Q = H .   
 
 Further Details   
 ===============   
@@ -9748,7 +6783,7 @@ reflectors
 
 Each H(i) has the form   
 
-	H(i) = I - tau * v * v\'   
+	H(i) = I - tau * v * v'   
 	where tau is a real scalar, and v is a real vector with   
     	v(1:i) = 0, v(i+1) = 1 and v(ihi+1:n) = 0; v(i+2:ihi) is stored on   
     	exit in A(i+2:ihi,i), and tau in tau(i).   
@@ -9802,66 +6837,34 @@ n = 7, ilo = 2 and ihi = 6:
  $info = null;
  $tau = zeroes(50);
  gehrd($a, 1, 50, $tau, $info);
-');
-
-pp_def("orghr",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int [phys]ilo();int [phys]ihi();[phys]tau(k); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
 
-		integer lwork = -1;
-             
-	     types(F) %{
-		extern int sorghr_(integer *n, integer *ilo, integer *ihi, 
-		float *a, integer *lda, float *tau, float *work, 
-		integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dorghr_(integer *n, integer *ilo, integer *ihi, 
-		double *a, integer *lda, double *tau, double *work, 
-		integer *lwork, integer *info);
-		 double tmp_work;
-             %}
+=for bad
 
-		$TFD(sorghr_,dorghr_)(
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(tau),
-		&tmp_work,
-		&lwork,
-		$P(info));
+gehrd ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
+=cut
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(sorghr_,dorghr_)(
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(tau),
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+
+
+
+*gehrd = \&PDL::gehrd;
+
+
+
+
+
+=head2 orghr
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int [phys]ilo();int [phys]ihi();[phys]tau(k); int [o,phys]info())
+
+
 
 =for ref
 
@@ -9900,91 +6903,34 @@ C<gehrd>:
  gehrd($a, 1, 50, $tau, $info);
  orghr($a, 1, 50, $tau, $info);
  
-');
 
-pp_def("hseqr",
-       HandleBad => 0,
-	Pars => '[io,phys]H(n,n); int job();int compz();int [phys]ilo();int [phys]ihi();[o,phys]wr(n); [o,phys]wi(n);[o,phys]Z(m,m); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		char pcompz;
-		char pjob = \'E\';
-		integer lwork = -1;
+=for bad
 
-	     types(F) %{
-		extern int shseqr_(char *job, char *compz, integer *n, integer *ilo,
-	 	integer *ihi, float *h__, integer *ldh, float *wr, 
-		float *wi, float *z__, integer *ldz, float *work, 
-		integer *lwork, integer *info);
-		float tmp_work;
-             %}
-             types(D) %{
-		extern int dhseqr_(char *job, char *compz, integer *n, integer *ilo,
-		integer *ihi, double *h__, integer *ldh, double *wr, 
-		double *wi, double *z__, integer *ldz, double *work, 
-		integer *lwork, integer *info);
-		 double tmp_work;
-             %}
+orghr ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		if($job())
-			pjob = \'S\';
 
-		switch ($compz())
-		{
-			case 1: pcompz = \'I\';
-				break;
-			case 2: pcompz = \'V\';
-				break;
-			default: pcompz = \'N\';
-		}
+=cut
 
-		$TFD(shseqr_,dhseqr_)(
-		&pjob,
-		&pcompz,
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(H),
-		&(integer){$PRIV(__n_size)},
-		$P(wr),
-		$P(wi),
-		$P(Z),
-		&(integer){$PRIV(__m_size)},
-		&tmp_work,
-		&lwork,
-		$P(info));
 
-		lwork = (integer )tmp_work;
-		{
-		types(F) %{
 
-		float *work = (float *)malloc(lwork *  sizeof(float));
-             %}
-             types(D) %{
 
-		double *work = (double *)malloc(lwork *  sizeof(double));
-             %}
-		$TFD(shseqr_,dhseqr_)(
-		&pjob,
-		&pcompz,
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(H),
-		&(integer){$PRIV(__n_size)},
-		$P(wr),
-		$P(wi),
-		$P(Z),
-		&(integer){$PRIV(__m_size)},
-		work,
-		&lwork,
-		$P(info));
-		free(work);
-		}
 
-',
-      Doc => '
+
+*orghr = \&PDL::orghr;
+
+
+
+
+
+=head2 hseqr
+
+=for sig
+
+  Signature: ([io,phys]H(n,n); int job();int compz();int [phys]ilo();int [phys]ihi();[o,phys]wr(n); [o,phys]wi(n);[o,phys]Z(m,m); int [o,phys]info())
+
+
 
 =for ref
 
@@ -10064,72 +7010,34 @@ matrix Q:  A = Q*H*Q**T = (QZ)*T*(QZ)**T.
  gehrd($a, 1, 50, $tau, $info);
  hseqr($a,0,0,1,50,($wr=null),($wi=null),$z,$info);
  
-');
 
-pp_def("trevc",
-       HandleBad => 0,
-	Pars => '[io,phys]T(n,n); int side();int howmny();int [phys]select(q);[io,phys]VL(m,r); [io,phys]VR(p,s);int [o,phys]m(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		char pside,phowmny;
-		integer mm = 0;
+=for bad
 
-	     types(F) %{
-		extern int strevc_(char *side, char *howmny, logical *select, 
-		integer *n, float *t, integer *ldt, float *vl, integer *
-		ldvl, float *vr, integer *ldvr, integer *mm, integer *m, 
-		float *work, integer *info);
-		float *work = (float *) malloc(3* $SIZE(n) *sizeof(float));
-             %}
-             types(D) %{
-		extern int dtrevc_(char *side, char *howmny, logical *select, 
-		integer *n, double *t, integer *ldt, double *vl, integer *
-		ldvl, double *vr, integer *ldvr, integer *mm, integer *m, 
-		double *work, integer *info);
-		double *work = (double *) malloc (3 * $SIZE(n) * sizeof(double));
-             %}
+hseqr ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		switch ($howmny())
-		{
-			case 1: phowmny = \'B\';
-				break;
-			case 2: phowmny = \'S\';
-				break;
-			default: phowmny = \'A\';
-		}
 
-		switch ($side())
-		{
-			case 1: pside = \'R\';
-				mm = $SIZE(s);
-				break;
-			case 2: pside = \'L\';
-				mm = $SIZE(r);
-				break;
-			default:pside = \'B\';
-				mm = $SIZE(s);
-		}
+=cut
 
-		$TFD(strevc_,dtrevc_)(
-		&pside,
-		&phowmny,
-		$P(select),
-		&(integer){$PRIV(__n_size)},
-		$P(T),
-		&(integer){$PRIV(__n_size)},
-		$P(VL),
-		&(integer){$PRIV(__m_size)},
-		$P(VR),
-		&(integer){$PRIV(__p_size)},
-		&mm,
-		$P(m), 
-		work,
-		$P(info));
-		free(work);
 
-',
-      Doc => '
+
+
+
+
+*hseqr = \&PDL::hseqr;
+
+
+
+
+
+=head2 trevc
+
+=for sig
+
+  Signature: ([io,phys]T(n,n); int side();int howmny();int [phys]select(q);[io,phys]VL(m,r); [io,phys]VR(p,s);int [o,phys]m(); int [o,phys]info())
+
+
 
 =for ref
 
@@ -10139,14 +7047,14 @@ a real upper quasi-triangular matrix T.
 The right eigenvector x and the left eigenvector y of T corresponding
 to an eigenvalue w are defined by:
 
-	T*x = w*x,     y\'*T = w*y\'
-	where y\' denotes the conjugate transpose of the vector y.
+	T*x = w*x,     y'*T = w*y'
+	where y' denotes the conjugate transpose of the vector y.
 
 If all eigenvectors are requested, the routine may either return the
 matrices X and/or Y of right or left eigenvectors of T, or the
 products Q*X and/or Q*Y, where Q is an input orthogonal
 matrix. If T was obtained from the real-Schur factorization of an
-original matrix A = Q*T*Q\', then Q*X and Q*Y are the matrices of
+original matrix A = Q*T*Q', then Q*X and Q*Y are the matrices of
 right or left eigenvectors of A.
 
 T must be in Schur canonical form (as returned by hseqr), that is,
@@ -10202,7 +7110,7 @@ magnitude has magnitude 1; here the magnitude of a complex number
             On exit, if side = 2 or 0, VL contains:
             if howmny = 0, the matrix Y of left eigenvectors of T;
                              VL has the same quasi-lower triangular form
-                             as T\'. If T(i,i) is a real eigenvalue, then
+                             as T'. If T(i,i) is a real eigenvalue, then
                              the i-th column VL(i) of VL  is its
                              corresponding eigenvector. If T(i:i+1,i:i+1)
                              is a 2-by-2 block whose eigenvalues are
@@ -10263,75 +7171,34 @@ magnitude has magnitude 1; here the magnitude of a complex number
  gehrd($a, 1, 50, $tau, $info);
  hseqr($a,0,0,1,50,($wr=null),($wi=null),$z,$info);
  
-');
 
 
-pp_def("tgevc",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int side();int howmny();[io,phys]B(n,n);int [phys]select(q);[io,phys]VL(m,r); [io,phys]VR(p,s);int [o,phys]m(); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-		char pside,phowmny;
-		integer mm = 0;
+trevc ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-	     types(F) %{
-		extern int stgevc_(char *side, char *howmny, logical *select, 
-		integer *n, float *a, integer *lda, float *b,integer *ldb,
-		float *vl, integer *ldvl, float *vr, integer *ldvr, integer *mm, integer *m, 
-		float *work, integer *info);
-		float *work = (float *) malloc(6* $SIZE(n) *sizeof(float));
-             %}
-             types(D) %{
-		extern int dtgevc_(char *side, char *howmny, logical *select, 
-		integer *n, double *a, integer *lda, double *b, integer *ldb,
-		double *vl, integer *ldvl, double *vr, integer *ldvr,
-		integer *mm, integer *m, double *work, integer *info);
-		double *work = (double *) malloc (6 * $SIZE(n) * sizeof(double));
-             %}
 
-		switch ($howmny())
-		{
-			case 1: phowmny = \'B\';
-				break;
-			case 2: phowmny = \'S\';
-				break;
-			default: phowmny = \'A\';
-		}
+=cut
 
-		switch ($side())
-		{
-			case 1: pside = \'R\';
-				mm = $SIZE(s);
-				break;
-			case 2: pside = \'L\';
-				mm = $SIZE(r);
-				break;
-			default:pside = \'B\';
-				mm = $SIZE(s);
-		}
 
-		$TFD(stgevc_,dtgevc_)(
-		&pside,
-		&phowmny,
-		$P(select),
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(B),
-		&(integer){$PRIV(__n_size)},
-		$P(VL),
-		&(integer){$PRIV(__m_size)},
-		$P(VR),
-		&(integer){$PRIV(__p_size)},
-		&mm,
-		$P(m), 
-		work,
-		$P(info));
-		free(work);
 
-',
-      Doc => '
+
+
+
+*trevc = \&PDL::trevc;
+
+
+
+
+
+=head2 tgevc
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int side();int howmny();[io,phys]B(n,n);int [phys]select(q);[io,phys]VL(m,r); [io,phys]VR(p,s);int [o,phys]m(); int [o,phys]info())
+
+
 
 =for ref
 
@@ -10444,50 +7311,34 @@ to the eigenvalue with positive imaginary part.
  gehrd($a, 1, 50, $tau, $info);
  hseqr($a,0,0,1,50,($wr=null),($wi=null),$z,$info);
  
-');
+
+
+=for bad
+
+tgevc ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-pp_def("gebal",
-	HandleBad => 0,
-	Pars => '[io,phys]A(n,n); int job(); int [o,phys]ilo();int [o,phys]ihi();[o,phys]scale(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
 
-		char pjob;
-             
-	     types(F) %{
-		extern int sgebal_(char *job, integer *n, float *a, integer *
-		lda, integer *ilo, integer *ihi, float *scale, integer *info);
-             %}
-             types(D) %{
-		extern int dgebal_(char *job, integer *n, double *a, integer *
-		lda, integer *ilo, integer *ihi, double *scale, integer *info);
-             %}
 
-	        switch ($job())
-		{
-			case 1:   pjob = \'P\';
-				  break;
-			case 2:   pjob = \'S\';
-				  break;
-			case 3:   pjob = \'B\';
-				  break;
-			default:  pjob = \'N\';
-		}
-		
-		$TFD(sgebal_,dgebal_)(
-		&pjob,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(scale),
-		$P(info));
 
-',
-      Doc => '
+*tgevc = \&PDL::tgevc;
+
+
+
+
+
+=head2 gebal
+
+=for sig
+
+  Signature: ([io,phys]A(n,n); int job(); int [o,phys]ilo();int [o,phys]ihi();[o,phys]scale(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -10573,56 +7424,34 @@ returned in the vector C<scale>.
  $ihi = null;
  gebal($a, $ilo, $ihi, $scale, $info);
  
-');
 
 
-pp_def("gebak",
-       HandleBad => 0,
-	Pars => '[io,phys]A(n,m); int job(); int side();int [phys]ilo();int [phys]ihi();[phys]scale(n); int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => generate_code '
+=for bad
 
-		char pjob;
-		char pside =\'L\' ;
-             
-	     types(F) %{
-		extern int sgebak_(char *job, char *side, integer *n, integer *ilo, 
-		integer *ihi, float *scale, integer *m, float *v, integer *
-		ldv, integer *info);
-             %}
-             types(D) %{
-		extern int dgebak_(char *job, char *side, integer *n, integer *ilo, 
-		integer *ihi, double *scale, integer *m, double *v, integer *
-		ldv, integer *info);
-             %}
+gebal ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-	        switch ($job())
-		{
-			case 1:   pjob = \'P\';
-				  break;
-			case 2:   pjob = \'S\';
-				  break;
-			case 3:   pjob = \'B\';
-				  break;
-			default:  pjob = \'N\';
-		}
-	        if ($side())
-	        	pside = \'R\';
 
-		$TFD(sgebak_,dgebak_)(
-		&pjob,
-		&pside,
-		&(integer){$PRIV(__n_size)},
-		$P(ilo),
-		$P(ihi),
-		$P(scale),
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		$P(info));
+=cut
 
-',
-      Doc => '
+
+
+
+
+
+*gebal = \&PDL::gebal;
+
+
+
+
+
+=head2 gebak
+
+=for sig
+
+  Signature: ([io,phys]A(n,m); int job(); int side();int [phys]ilo();int [phys]ihi();[phys]scale(n); int [o,phys]info())
+
+
 
 =for ref
 
@@ -10673,55 +7502,34 @@ balanced matrix output by gebal.
  # Compute eigenvectors ($ev)
  gebak($ev, $ilo, $ihi, $scale, $info);
  
-');
 
-pp_def("lange",
-       HandleBad => 0,
-	Pars => '[phys]A(n,m); int norm(); [o]b()',
-	GenericTypes => [F,D],
-	Code => '
 
-             char pnorm;
+=for bad
 
-	     types(F) %{
-		extern float slange_(char *norm, integer *m, integer *n, float *a, integer
-		*lda, float *work);
-		float *work;
-             %}
-             types(D) %{
-		extern double dlange_(char *norm, integer *m, integer *n, double *a, integer
-		*lda, double *work);
-		double *work;
-             %}
-		switch ($norm())
-		{
-			case 1: pnorm = \'O\';
-				break;
-			case 2: pnorm = \'I\';
-			types(F) %{
-				work = (float *)malloc($PRIV(__n_size) *  sizeof(float));
-             		%}
-             		types(D) %{
-				work = (double *)malloc($PRIV(__n_size) *  sizeof(double));
-             		%}
-				break;
-			case 3: pnorm = \'F\';
-				break;
-			default: pnorm = \'M\';
-		}
+gebak ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$b() = $TFD(slange_,dlange_)(
-		&pnorm,
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		work);
-		if ($norm() == 2)
-			free (work);
 
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*gebak = \&PDL::gebak;
+
+
+
+
+
+=head2 lange
+
+=for sig
+
+  Signature: ([phys]A(n,m); int norm(); [o]b())
+
+
 
 =for ref
 
@@ -10761,63 +7569,34 @@ real matrix A.
  $a = random (float, 100, 100);
  $norm  = $a->lange(1);
 
-');
 
-pp_def("lansy",
-       HandleBad => 0,
-	Pars => '[phys]A(n,n); int uplo(); int norm(); [o]b()',
-	GenericTypes => [F,D],
-	Code => '
 
-             char pnorm, puplo = \'U\';
+=for bad
 
-	     types(F) %{
-		extern float slansy_(char *norm, char *uplo, integer *n, float *a, integer 
-		*lda, float *work);
-		float *work;
-             %}
-             types(D) %{
-		extern double dlansy_(char *norm, char *uplo, integer *n, double *a, integer 
-		*lda, double *work);
-		double *work;
-             %}
-		switch ($norm())
-		{
-			case 1: pnorm = \'O\';
-			types(F) %{
-				work = (float *)malloc($PRIV(__n_size) *  sizeof(float));
-             		%}
-             		types(D) %{
-				work = (double *)malloc($PRIV(__n_size) *  sizeof(double));
-             		%}
-				break;
-			case 2: pnorm = \'I\';
-			types(F) %{
-				work = (float *)malloc($PRIV(__n_size) *  sizeof(float));
-             		%}
-             		types(D) %{
-				work = (double *)malloc($PRIV(__n_size) *  sizeof(double));
-             		%}
-				break;
-			case 3: pnorm = \'F\';
-				break;
-			default: pnorm = \'M\';
-		}
-		if($uplo())
-			puplo = \'L\';
+lange ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$b() = $TFD(slansy_,dlansy_)(
-		&pnorm,
-		&puplo,
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		work);
-		if ($norm() == 2 || $norm() == 1)
-			free (work);
 
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*lange = \&PDL::lange;
+
+
+
+
+
+=head2 lansy
+
+=for sig
+
+  Signature: ([phys]A(n,n); int uplo(); int norm(); [o]b())
+
+
 
 =for ref
 
@@ -10866,62 +7645,34 @@ real symmetric matrix A.
  $a = random (float, 100, 100);
  $norm  = $a->lansy(1, 1);
 
-');
 
-pp_def("lantr",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n);int uplo();int norm();int diag();[o]b()',
-	GenericTypes => [F,D],
-	Code => '
 
-             char pnorm, puplo = \'U\';
-             char pdiag = \'N\';
+=for bad
 
-	     types(F) %{
-		extern float slantr_(char *norm, char *uplo, char *diag, integer *m, integer *n, float *a, integer 
-		*lda, float *work);
-		float *work;
-             %}
-             types(D) %{
-		extern double dlantr_(char *norm, char *uplo, char *diag, integer *m, integer *n, double *a, integer 
-		*lda, double *work);
-		double *work;
-             %}
-		switch ($norm())
-		{
-			case 1: pnorm = \'O\';
-				break;
-			case 2: pnorm = \'I\';
-			types(F) %{
-				work = (float *)malloc($PRIV(__m_size) *  sizeof(float));
-             		%}
-             		types(D) %{
-				work = (double *)malloc($PRIV(__m_size) *  sizeof(double));
-             		%}
-				break;
-			case 3: pnorm = \'F\';
-				break;
-			default: pnorm = \'M\';
-		}
-		if($uplo())
-			puplo = \'L\';
-		if($diag())
-			pdiag = \'U\';
+lansy ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$b() = $TFD(slantr_,dlantr_)(
-		&pnorm,
-		&puplo,
-		&pdiag,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		work);
-		if ($norm() == 2)
-			free (work);
 
-',
-      Doc => '
+=cut
+
+
+
+
+
+
+*lansy = \&PDL::lansy;
+
+
+
+
+
+=head2 lantr
+
+=for sig
+
+  Signature: ([phys]A(m,n);int uplo();int norm();int diag();[o]b())
+
+
 
 =for ref
 
@@ -10976,65 +7727,41 @@ trapezoidal or triangular matrix A.
  $a = random (float, 100, 100);
  $norm  = $a->lantr(1, 1, 0);
 
-');
-
-################################################################################
-#
-#		BLAS ROUTINES
-#
-################################################################################
-pp_def("gemm",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); int transa(); int transb(); [phys]B(p,q);[phys]alpha(); [phys]beta(); [io,phys]C(r,s)',
-	GenericTypes => [F,D],
-	Code => '
-		char ptransa = \'N\';
-		char ptransb = \'N\';
-
-		types(F) %{
-			extern int sgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, float *alpha, float *a, integer *lda,
-			float *b, integer *ldb, float *beta, float *c__,
-			integer *ldc);
-		%}
-		types(D) %{
-			extern int dgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, double *alpha, double *a, integer *lda,
-			double *b, integer *ldb, double *beta, double *c__,
-			integer *ldc);
-		%}
-		integer kk = $transa() ? $SIZE(m) : $SIZE(n);
-
-		if ($transa())
-			ptransa = \'T\';
-
-		if ($transb())
-			ptransb = \'T\';
 
 
-		$TFD(sgemm_,dgemm_)(
-		&ptransa,
-		&ptransb,
-		&(integer){$PRIV(__r_size)},
-		&(integer){$PRIV(__s_size)},
-		&kk,
-		$P(alpha),
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(beta),
-		$P(C),
-		&(integer){$PRIV(__r_size)});
-',
-      Doc => '
+=for bad
+
+lantr ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*lantr = \&PDL::lantr;
+
+
+
+
+
+=head2 gemm
+
+=for sig
+
+  Signature: ([phys]A(m,n); int transa(); int transb(); [phys]B(p,q);[phys]alpha(); [phys]beta(); [io,phys]C(r,s))
+
+
 
 =for ref
 
 Performs one of the matrix-matrix operations
 
 	C := alpha*op( A )*op( B ) + beta*C,
-	where  op( X ) is one of p( X ) = X   or   op( X ) = X\',
+	where  op( X ) is one of p( X ) = X   or   op( X ) = X',
 	alpha and beta are scalars, and A, B and C are matrices, with op( A )
 	an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.
 
@@ -11043,12 +7770,12 @@ Performs one of the matrix-matrix operations
     transa:  On entry, transa specifies the form of op( A ) to be used in
              the matrix multiplication as follows:
                 transa = 0,	op( A ) = A.
-                transa = 1,	op( A ) = A\'.
+                transa = 1,	op( A ) = A'.
 
     transb:  On entry, transb specifies the form of op( B ) to be used in
              the matrix multiplication as follows:
                 transb = 0,	op( B ) = B.
-                transb = 1,	op( B ) = B\'.
+                transb = 1,	op( B ) = B'.
 
     alpha:   On entry, alpha specifies the scalar alpha.
 
@@ -11079,265 +7806,110 @@ Performs one of the matrix-matrix operations
  $beta = pdl(0);
  $c = zeroes(5,5);
  gemm($a, 0, 1,$b, $alpha, $beta, $c);
-');
-
-if ($config{CBLAS}){
-
-pp_def("rmgemm",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); int transa(); int transb(); [phys]B(p,q);[phys]alpha(); [phys]beta(); [io,phys]C(r,s)',
-	GenericTypes => [F,D],
-	Code => '
-		int ptransa = CblasNoTrans;
-		int ptransb = CblasNoTrans;
-
-		types(F) %{
-			extern void cblas_sgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA,
-				const enum CBLAS_TRANSPOSE TransB, const int M, const int N,
-				const int K, const float alpha, const float *A,
-				const int lda, const float *B, const int ldb,
-				const float beta, float *C, const int ldc);
-		%}
-		types(D) %{
-			extern void cblas_dgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA,
-		                 const enum CBLAS_TRANSPOSE TransB, const int M, const int N,
-	        	         const int K, const double alpha, const double *A,
-	                	 const int lda, const double *B, const int ldb,
-		                 const double beta, double *C, const int ldc);
-		%}
-		integer kk = $transa() ? $SIZE(n) : $SIZE(m);
-
-		if ($transa())
-			ptransa = CblasTrans;
-
-		if ($transb())
-			ptransb = CblasTrans;
 
 
-		$TFD(cblas_sgemm,cblas_dgemm)(
-		CblasRowMajor,
-		ptransa,
-		ptransb,
-		$PRIV(__s_size),
-		$PRIV(__r_size),
-		kk,
-		$alpha(),
-		$P(A),
-		$PRIV(__m_size),
-		$P(B),
-		$PRIV(__p_size),
-		$beta(),
-		$P(C),
-		$PRIV(__r_size));
-',
-      Doc => '
+=for bad
 
-=for ref
+gemm ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-Row major version of gemm
 
-=for example
+=cut
 
- $a = random(5,4);
- $b = random(5,4);
- $alpha = pdl(0.5);
- $beta = pdl(0);
- $c = zeroes(4,4);
- rmgemm($a, 0, 1,$b, $alpha, $beta, $c);
-');
-}
 
-pp_def("mmult",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); [phys]B(p,m); [o,phys]C(p,n)',
-	GenericTypes => [F,D],
-	Code => '
-		char ptrans = \'N\';
-		types(F) %{
-			extern int sgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, float *alpha, float *a, integer *lda,
-			float *b, integer *ldb, float *beta, float *c__,
-			integer *ldc);
-			float alpha = 1;
-			float beta = 0;
-		%}
-		types(D) %{
-			extern int dgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, double *alpha, double *a, integer *lda,
-			double *b, integer *ldb, double *beta, double *c__,
-			integer *ldc);
-			double alpha = 1;
-			double beta = 0;
-		%}
 
-		$TFD(sgemm_,dgemm_)(
-		&ptrans,
-		&ptrans,
-		&(integer){$PRIV(__p_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		&alpha,
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		&beta,
-		$P(C),
-		&(integer){$PRIV(__p_size)});
-',
-      Doc => '
+
+
+
+*gemm = \&PDL::gemm;
+
+
+
+
+
+=head2 mmult
+
+=for sig
+
+  Signature: ([phys]A(m,n); [phys]B(p,m); [o,phys]C(p,n))
+
+
 
 =for ref
 
 Blas matrix multiplication based on gemm
 
-');
-if ($config{STRASSEN}){
-pp_def("smmult",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); [phys]B(p,m); [o,phys]C(p,n)',
-	GenericTypes => [F,D],
-	Code => '
-		char ptrans = \'N\';
-		types(F) %{
-			extern int sgemmb_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, float *alpha, float *a, integer *lda,
-			float *b, integer *ldb, float *beta, float *c__,
-			integer *ldc);
-			float alpha = 1;
-			float beta = 0;
-		%}
-		types(D) %{
-			extern int dgemmb_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, double *alpha, double *a, integer *lda,
-			double *b, integer *ldb, double *beta, double *c__,
-			integer *ldc);
-			double alpha = 1;
-			double beta = 0;
-		%}
 
-		$TFD(sgemmb_,dgemmb_)(
-		&ptrans,
-		&ptrans,
-		&(integer){$PRIV(__p_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		&alpha,
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		&beta,
-		$P(C),
-		&(integer){$PRIV(__p_size)});
-',
-      Doc => '
 
-=for ref
+=for bad
 
-Blas matrix multiplication based on Strassen Algorithm.
+mmult ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-');
-}
 
-pp_def("crossprod",
-       HandleBad => 0,
-	Pars => '[phys]A(n,m); [phys]B(p,m); [o,phys]C(p,n)',
-	GenericTypes => [F,D],
-	Code => '
+=cut
 
-		char btrans = \'N\';
-		char atrans = \'T\';
-		types(F) %{
-			extern int sgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, float *alpha, float *a, integer *lda,
-			float *b, integer *ldb, float *beta, float *c__,
-			integer *ldc);
-			float alpha = 1;
-			float beta = 0;
-		%}
-		types(D) %{
-			extern int dgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, double *alpha, double *a, integer *lda,
-			double *b, integer *ldb, double *beta, double *c__,
-			integer *ldc);
-			double alpha = 1;
-			double beta = 0;
-		%}
 
-		$TFD(sgemm_,dgemm_)(
-		&btrans,
-		&atrans,
-		&(integer){$PRIV(__p_size)},
-		&(integer){$PRIV(__n_size)},
-		&(integer){$PRIV(__m_size)},
-		&alpha,
-		$P(B),
-		&(integer){$PRIV(__p_size)},
-		$P(A),
-		&(integer){$PRIV(__n_size)},
-		&beta,
-		$P(C),
-		&(integer){$PRIV(__p_size)});
-',
-      Doc => '
+
+
+
+
+*mmult = \&PDL::mmult;
+
+
+
+
+
+=head2 crossprod
+
+=for sig
+
+  Signature: ([phys]A(n,m); [phys]B(p,m); [o,phys]C(p,n))
+
+
 
 =for ref
 
 Blas matrix cross product based on gemm
 
-');
-
-pp_def("syrk",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); int uplo(); int trans(); [phys]alpha(); [phys]beta(); [io,phys]C(p,p)',
-	GenericTypes => [F,D],
-	Code => '
-		char puplo = \'U\';
-		char ptrans = \'N\';
-
-		types(F) %{
-			extern int ssyrk_(char *uplo, char *trans, integer *n, integer *k,
-			float *alpha, float *a, integer *lda, float *beta,
-			float *c__, integer *ldc);
-		%}
-		types(D) %{
-			extern int dsyrk_(char *uplo, char *trans, integer *n, integer *k,
-			double *alpha, double *a, integer *lda, double *beta,
-			double *c__, integer *ldc);
-		%}
-		integer kk = $trans() ? $SIZE(m) : $SIZE(n);
-
-		if ($uplo())
-			puplo = \'L\';
-
-		if ($trans())
-			ptrans = \'T\';
 
 
-		$TFD(ssyrk_,dsyrk_)(
-		&puplo,
-		&ptrans,
-		&(integer){$PRIV(__p_size)},
-		&kk,
-		$P(alpha),
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(beta),
-		$P(C),
-		&(integer){$PRIV(__p_size)});
-',
-      Doc => '
+=for bad
+
+crossprod ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*crossprod = \&PDL::crossprod;
+
+
+
+
+
+=head2 syrk
+
+=for sig
+
+  Signature: ([phys]A(m,n); int uplo(); int trans(); [phys]alpha(); [phys]beta(); [io,phys]C(p,p))
+
+
 
 =for ref
 
 Performs one of the symmetric rank k operations
 
-	C := alpha*A*A\' + beta*C,
+	C := alpha*A*A' + beta*C,
 
 or
 
-	C := alpha*A\'*A + beta*C,
+	C := alpha*A'*A + beta*C,
 
 	where  alpha and beta  are scalars, C is an  n by n  symmetric matrix
 	and  A  is an  n by k  matrix in the first case and a  k by n  matrix
@@ -11356,8 +7928,8 @@ or
 
     trans:   On entry,  trans  specifies the operation to be performed as
              follows:
-                trans = 0	C := alpha*A*A\' + beta*C.
-                trans = 1	C := alpha*A\'*A + beta*C.
+                trans = 0	C := alpha*A*A' + beta*C.
+                trans = 1	C := alpha*A'*A + beta*C.
 
     alpha:   On entry, alpha specifies the scalar alpha.
              Unchanged on exit.
@@ -11390,93 +7962,34 @@ or
  $beta = 0;
  syrk ($a, 1,0,$alpha, $beta , $b);
 
-');
-
-if ($config{CBLAS}){
-pp_def("rmsyrk",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); int uplo(); int trans(); [phys]alpha(); [phys]beta(); [io,phys]C(p,p)',
-	GenericTypes => [F,D],
-	Code => '
-
-		int puplo = 121;
-		int ptrans = 111;
-
-		types(F) %{
-			extern void cblas_ssyrk(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
-		                 const enum CBLAS_TRANSPOSE Trans, const int N, const int K,
-		                 const float alpha, const float *A, const int lda,
-		                 const float beta, float *C, const int ldc);
-		%}
-		types(D) %{
-			extern void cblas_dsyrk(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
-		                 const enum CBLAS_TRANSPOSE Trans, const int N, const int K,
-	        	         const double alpha, const double *A, const int lda,
-	                	 const double beta, double *C, const int ldc);
-		%}
-		integer kk = $trans() ? $SIZE(n) : $SIZE(m);
-
-		if ($uplo())
-			puplo = 122;
-
-		if ($trans())
-			ptrans = 112;
 
 
-		$TFD(cblas_ssyrk,cblas_dsyrk)(
-		101,
-		puplo,
-		ptrans,
-		$PRIV(__p_size),
-		kk,
-		$alpha(),
-		$P(A),
-		$PRIV(__m_size),
-		$beta(),
-		$P(C),
-		$PRIV(__p_size));
-',
-      Doc => '
+=for bad
 
-=for ref
+syrk ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-Row major version of syrk
 
-=for example
+=cut
 
- $a = random(5,4);
- $b = zeroes(4,4);
- $alpha = 1;
- $beta = 0;
- rmsyrk ($a, 1,0,$alpha, $beta , $b);
 
-');
 
-}
 
-pp_def("dot",
-       HandleBad => 0,
-	Pars => '[phys]a(n);int [phys]inca();[phys]b(m);int [phys]incb();[o,phys]c()',
-	GenericTypes => [F,D],
-	Code => '
-		types(F) %{
-			extern float sdot_(integer *n, float *dx, integer *incx, float *dy,
-			integer *incy);
-		%}
-		types(D) %{
-			extern double ddot_(integer *n, double *dx, integer *incx, double *dy,
-			integer *incy);
-		%}
-		integer n = (integer ) $PRIV(__n_size)/$inca();
-		
-		$c() = $TFD(sdot_,ddot_)(
-		&n,
-		$P(a),
-		$P(inca),
-		$P(b),
-		$P(incb));
-',
-      Doc => '
+
+
+*syrk = \&PDL::syrk;
+
+
+
+
+
+=head2 dot
+
+=for sig
+
+  Signature: ([phys]a(n);int [phys]inca();[phys]b(m);int [phys]incb();[o,phys]c())
+
+
 
 =for ref
 
@@ -11488,34 +8001,34 @@ Dot product of two vectors using Blas.
  $b = random(5);
  $c = dot($a, 1, $b, 1)
 
-');
 
 
-pp_def("axpy",
-       HandleBad => 0,
-	Pars => '[phys]a(n);int [phys]inca();[phys] alpha();[io,phys]b(m);int [phys]incb()',
-	GenericTypes => [F,D],
-	Code => '
+=for bad
 
-		types(F) %{
-			extern int saxpy_(integer *n, float *da, float *dx,
-			integer *incx, float *dy, integer *incy);
-		%}
-		types(D) %{
-			extern int daxpy_(integer *n, double *da, double *dx,
-			integer *incx, double *dy, integer *incy);
-		%}
-		integer n = (integer ) $PRIV(__n_size)/$inca();
+dot ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
-		$TFD(saxpy_,daxpy_)(
-		&n,
-		$P(alpha),
-		$P(a),
-		$P(inca),
-		$P(b),
-		$P(incb));
-',
-      Doc => '
+
+=cut
+
+
+
+
+
+
+*dot = \&PDL::dot;
+
+
+
+
+
+=head2 axpy
+
+=for sig
+
+  Signature: ([phys]a(n);int [phys]inca();[phys] alpha();[io,phys]b(m);int [phys]incb())
+
+
 
 =for ref
 
@@ -11529,30 +8042,34 @@ Returns result in b.
  $b = random(5);
  axpy($a, 1, 12, $b, 1)
 
-');
 
-pp_def("nrm2",
-       HandleBad => 0,
-	Pars => '[phys]a(n);int [phys]inca();[o,phys]b()',
-	GenericTypes => [F,D],
-	Code => '
 
-		types(F) %{
-			extern float snrm2_(integer *n, float *dx,
-			integer *incx);
-		%}
-		types(D) %{
-			extern double dnrm2_(integer *n, double *dx,
-			integer *incx);
-		%}
-		integer n = (integer ) $PRIV(__n_size)/$inca();
+=for bad
 
-		$b() = $TFD(snrm2_,dnrm2_)(
-		&n,
-		$P(a),
-		$P(inca));
-',
-      Doc => '
+axpy ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*axpy = \&PDL::axpy;
+
+
+
+
+
+=head2 nrm2
+
+=for sig
+
+  Signature: ([phys]a(n);int [phys]inca();[o,phys]b())
+
+
 
 =for ref
 
@@ -11563,30 +8080,34 @@ Euclidean norm of a vector using Blas.
  $a = random(5);
  $norm2 = norm2($a,1)
 
-');
 
-pp_def("asum",
-       HandleBad => 0,
-	Pars => '[phys]a(n);int [phys]inca();[o,phys]b()',
-	GenericTypes => [F,D],
-	Code => '
 
-		types(F) %{
-			extern float sasum_(integer *n, float *dx,
-			integer *incx);
-		%}
-		types(D) %{
-			extern double dasum_(integer *n, double *dx,
-			integer *incx);
-		%}
-		integer n = (integer ) $PRIV(__n_size)/$inca();
+=for bad
 
-		$b() = $TFD(sasum_,dasum_)(
-		&n,
-		$P(a),
-		$P(inca));
-',
-      Doc => '
+nrm2 ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*nrm2 = \&PDL::nrm2;
+
+
+
+
+
+=head2 asum
+
+=for sig
+
+  Signature: ([phys]a(n);int [phys]inca();[o,phys]b())
+
+
 
 =for ref
 
@@ -11597,31 +8118,34 @@ Sum of absolute values of a vector using Blas.
  $a = random(5);
  $absum = asum($a,1)
 
-');
 
-pp_def("scal",
-       HandleBad => 0,
-	Pars => '[io,phys]a(n);int [phys]inca();[phys]scale()',
-	GenericTypes => [F,D],
-	Code => '
 
-		types(F) %{
-			extern int sscal_(integer *n, float *sa,
-			float *dx, integer *incx);
-		%}
-		types(D) %{
-			extern int dscal_(integer *n, double *sa,
-			double *dx,integer *incx);
-		%}
-		integer n = (integer ) $PRIV(__n_size)/$inca();
+=for bad
 
-		$TFD(sscal_,dscal_)(
-		&n,
-		$P(scale),
-		$P(a),
-		$P(inca));
-',
-      Doc => '
+asum ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*asum = \&PDL::asum;
+
+
+
+
+
+=head2 scal
+
+=for sig
+
+  Signature: ([io,phys]a(n);int [phys]inca();[phys]scale())
+
+
 
 =for ref
 
@@ -11632,35 +8156,34 @@ Scale a vector by a constant using Blas.
  $a = random(5);
  $a->scal(1, 0.5)
 
-');
 
-pp_def("rot",
-       HandleBad => 0,
-	Pars => '[io,phys]a(n);int [phys]inca();[phys]c(); [phys]s();[io,phys]b(n);int [phys]incb()',
-	GenericTypes => [F,D],
-	Code => '
 
-		types(F) %{
-			extern int srot_(integer *n, float *dx,
-			integer *incx, float *dy, integer *incy, float *c, float *s);
-		%}
-		types(D) %{
-			extern int drot_(integer *n, double *dx,
-			integer *incx, double *dy, integer *incy, double *c, double *s);
-		%}
-		integer n = (integer ) $PRIV(__n_size)/$inca();
+=for bad
 
-		$TFD(srot_,drot_)(
-		&n,
-		$P(a),
-		$P(inca),
-		$P(b),
-		$P(incb),
-		$P(c),
-		$P(s)		
-		);
-',
-      Doc => '
+scal ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*scal = \&PDL::scal;
+
+
+
+
+
+=head2 rot
+
+=for sig
+
+  Signature: ([io,phys]a(n);int [phys]inca();[phys]c(); [phys]s();[io,phys]b(n);int [phys]incb())
+
+
 
 =for ref
 
@@ -11672,31 +8195,34 @@ Applies plane rotation using Blas.
  $b = random(5);
  rot($a, 1, 0.5, 0.7, $b, 1)
 
-');
 
-pp_def("rotg",
-       HandleBad => 0,
-	Pars => '[io,phys]a();[io,phys]b();[o,phys]c(); [o,phys]s()',
-	GenericTypes => [F,D],
-	Code => '
 
-		types(F) %{
-			extern int srotg_(float *dx,
-			float *dy, float *c, float *s);
-		%}
-		types(D) %{
-			extern int drotg_(double *dx,
-			double *dy, double *c, double *s);
-		%}
+=for bad
 
-		$TFD(srotg_,drotg_)(
-		$P(a),
-		$P(b),
-		$P(c),
-		$P(s)		
-		);
-',
-      Doc => '
+rot ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*rot = \&PDL::rot;
+
+
+
+
+
+=head2 rotg
+
+=for sig
+
+  Signature: ([io,phys]a();[io,phys]b();[o,phys]c(); [o,phys]s())
+
+
 
 =for ref
 
@@ -11707,37 +8233,34 @@ Generates plane rotation using Blas.
  $a = sequence(4);
  rotg($a(0), $a(1),$a(2),$a(3))
 
-');
 
-################################################################################
-#
-#		LAPACK AUXILIARY ROUTINES
-#
-################################################################################
-pp_def("lasrt",
-       HandleBad => 0,
-	Pars => '[io,phys]d(n); int id();int [o,phys]info()',
-	GenericTypes => [F,D],
-	Code => '
-		char pwork  = \'I\';
-		types(F) %{
-			extern int slasrt_(char *id, integer *n, float *d__, integer *
-			info);
-		%}
-		types(D) %{
-			extern int dlasrt_(char *id, integer *n, double *d__, integer *
-			info);
-		%}
-		if ($id())
-			pwork = \'D\';
 
-		$TFD(slasrt_,dlasrt_)(
-		&pwork,
-		&(integer){$PRIV(__n_size)},
-		$P(d),
-		$P(info));
-',
-      Doc => '
+=for bad
+
+rotg ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*rotg = \&PDL::rotg;
+
+
+
+
+
+=head2 lasrt
+
+=for sig
+
+  Signature: ([io,phys]d(n); int id();int [o,phys]info())
+
+
 
 =for ref
 
@@ -11765,46 +8288,34 @@ size <= 20. Dimension of stack limits N to about 2**32.
 
  $a = random(5);
  lasrt ($a, 0, ($info = null));
-');
+
+
+=for bad
+
+lasrt ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
 
 
 
-pp_def("lacpy",
-       HandleBad => 0,
-	Pars => '[phys]A(m,n); int uplo(); [o,phys]B(p,n)',
-	GenericTypes => [F,D],
-	Code => '
-		char puplo;
-
-		types(F) %{
-			extern int slacpy_(char *uplo, integer *m, integer *n, float *
-			a, integer *lda, float *b, integer *ldb);
-		%}
-		types(D) %{
-			extern int dlacpy_(char *uplo, integer *m, integer *n, double *
-			a, integer *lda, double *b, integer *ldb);
-		%}
 
 
-		switch ($uplo())
-		{
-			case 0: puplo = \'U\';
-				break;
-			case 1: puplo = \'L\';
-				break;
-			default: puplo = \'A\';
-		}
 
-		$TFD(slacpy_,dlacpy_)(
-		&puplo,
-		&(integer){$PRIV(__m_size)},
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(B),
-		&(integer){$PRIV(__p_size)});
-',
-      Doc => '
+*lasrt = \&PDL::lasrt;
+
+
+
+
+
+=head2 lacpy
+
+=for sig
+
+  Signature: ([phys]A(m,n); int uplo(); [o,phys]B(p,n))
+
+
 
 =for ref
 
@@ -11830,42 +8341,40 @@ matrix B.
  $a = random(5,5);
  $b = zeroes($a);
  lacpy ($a, 0, $b);
-');
 
 
-pp_def("laswp",
-       HandleBad => 0,
-	Pars => '[io,phys]A(m,n);int [phys]k1();int [phys] k2(); int [phys]ipiv(p);int [phys]inc()',
-	GenericTypes => [F,D],
-	Code => '
+=for bad
+
+lacpy ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
 
 
-		types(F) %{
-			extern int slaswp_(integer *n, float *a, integer *lda, integer 
-			*k1, integer *k2, integer *ipiv, integer *incx);
-		%}
-		types(D) %{
-			extern int dlaswp_(integer *n, double *a, integer *lda, integer 
-			*k1, integer *k2, integer *ipiv, integer *incx);
-		%}
+=cut
 
 
-		$TFD(slaswp_,dlaswp_)(
-		&(integer){$PRIV(__n_size)},
-		$P(A),
-		&(integer){$PRIV(__m_size)},
-		$P(k1),
-		$P(k2),
-		$P(ipiv),
-		$P(inc));
-',
-      Doc => '
+
+
+
+
+*lacpy = \&PDL::lacpy;
+
+
+
+
+
+=head2 laswp
+
+=for sig
+
+  Signature: ([io,phys]A(m,n);int [phys]k1();int [phys] k2(); int [phys]ipiv(p);int [phys]inc())
+
+
 
 =for ref
 
 Performs a series of row interchanges on the matrix A.   
 One row interchange is initiated for each of rows k1 through k2 of A.
-Dosen\'t use PDL indice (start = 1).   
+Dosen't use PDL indice (start = 1).   
 
     Arguments   
     =========   
@@ -11893,49 +8402,34 @@ Dosen\'t use PDL indice (start = 1).
  # reverse row (col for PDL)
  $b = pdl([5,4,3,2,1]);
  $a->laswp(1,2,$b,1);
-');
 
-pp_def("lamch",
-       HandleBad => 0,
-	Pars => 'cmach(); [o]precision()',
-	GenericTypes => [F,D],
-	Inplace => 1,
-	Code => '
-		char pcmach;
-		int tmp;
-		types(F) %{
-			extern float slamch_(char *cmach);
-		%}
-		types(D) %{
-			extern double dlamch_(char *cmach);
-		%}
 
-		tmp = (int ) $cmach();
-		switch (tmp)
-		{
-			case 1: pcmach = \'S\';
-				break;
-			case 2: pcmach = \'B\';
-				break;
-			case 3: pcmach = \'P\';
-				break;
-			case 4: pcmach = \'N\';
-				break;
-			case 5: pcmach = \'R\';
-				break;
-			case 6: pcmach = \'M\';
-				break;
-			case 7: pcmach = \'U\';
-				break;
-			case 8: pcmach = \'L\';
-				break;
-			case 9: pcmach = \'O\';
-				break;
-			default: pcmach = \'E\';
-		}
-		$precision() = $TFD(slamch_,dlamch_)(&pcmach);
-',
-      Doc => '
+=for bad
+
+laswp ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*laswp = \&PDL::laswp;
+
+
+
+
+
+=head2 lamch
+
+=for sig
+
+  Signature: (cmach(); [o]precision())
+
+
 
 =for ref
 
@@ -11974,24 +8468,34 @@ Works inplace.
 
  $a = lamch (0);
  print "EPS is $a for double\n";
-');
 
-pp_def("labad",
-       HandleBad => 0,
-	Pars => '[io,phys]small(); [io,phys]large()',
-	GenericTypes => [F,D],
-	Code => '
 
-		types(F) %{
-			extern int slabad_(float *small, float *large);
-		%}
-		types(D) %{
-			extern int dlabad_(double *small, double *large);
-		%}
+=for bad
 
-		$TFD(slabad_, dlabad_)($P(small),$P(large));
-',
-      Doc => '
+lamch ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*lamch = \&PDL::lamch;
+
+
+
+
+
+=head2 labad
+
+=for sig
+
+  Signature: ([io,phys]small(); [io,phys]large())
+
+
 
 =for ref
 
@@ -12021,340 +8525,186 @@ the exponent range, as is found on a Cray.
  $overflow = lamch(9);
  labad ($underflow, $overflow);
 
-');
-################################################################################
-#
-#		OTHER AUXILIARY ROUTINES
-#
-################################################################################
 
-pp_def(
-	'tricpy',
-	Pars => 'A(m,n);int uplo();[o] C(m,n)',
-	Code => '
-		PDL_Long i, j, k;
-		
-		if ($uplo())
-		{
-			for (i = 0; i < $SIZE(n);i++)
-			{
-				k = min(i,($SIZE(m)-1));
-				for (j = 0; j <= k; j++)
-	               			$C(m=>j,n=>i) = $A(m=>j,n=>i);
-			}
-		}
-		else
-		{
-			for (i = 0; i < $SIZE(n);i++)
-			{
-				for (j = i; j < $SIZE(m); j++)
-	               			$C(m=>j,n=>i) = $A(m=>j,n=>i);
-				if (i >= $SIZE(m))
-					break;
-			}
-		}
-	',
-	Doc => <<EOT
+
+=for bad
+
+labad ignores the bad-value flag of the input piddles.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*labad = \&PDL::labad;
+
+
+
+
+
+=head2 tricpy
+
+=for sig
+
+  Signature: (A(m,n);int uplo();[o] C(m,n))
+
 =for ref
 
 Copy triangular part to another matrix. If uplo == 0 copy upper triangular part.
 
+
+
+=for bad
+
+tricpy does not process bad values.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
 =cut
 
-EOT
-
-);
 
 
-pp_def(
-	'cplx_eigen',
-	Pars => 'eigreval(n);eigimval(n); eigvec(n,p);int fortran();[o]cplx_val(q=2,n);[o]cplx_vec(r=2,n,p)',
-	Code => '
-	  register PDL_Long i,j;
-	  PDL_Long index;	  
 
-	  if ($fortran())
-	  {
-		  if ($SIZE(n) != $SIZE(p))
-			  croak("Fortran storage type needs square eigvec!");
-		  for(i = 0; i < $SIZE(p);i++)
-		  {
-			 if ($eigimval(n=>i) == 0)
-			 {
-				 $cplx_val(q=>0,n=>i) = $eigreval(n=>i);
-	 			 $cplx_val(q=>1,n=>i) = $eigimval(n=>i);
-				 for (j = 0; j < $SIZE(n); j++)
-				 {
-					$cplx_vec(r=>0,n=>j,p=>i) = $eigvec(n=>j,p=>i);
-					$cplx_vec(r=>1,n=>j,p=>i) = 0;
-				 }
-			 }
-			 else
-			 {
-				 index = i+1;
-				 $cplx_val(q=>0,n=>i) = $eigreval(n=>i);
-	 			 $cplx_val(q=>1,n=>i) = $eigimval(n=>i);
-				 $cplx_val(q=>0,n=>index) = $eigreval(n=>index);
-	 			 $cplx_val(q=>1,n=>index) = $eigimval(n=>index);
-				 for (j = 0; j < $SIZE(n); j++)
-				 {
-					$cplx_vec(r=>0,n=>j,p=>i) = $cplx_vec(r=>0,n=>j,p=>index) = $eigvec(n=>j,p=>i);
-					$cplx_vec(r=>1,n=>j,p=>i) = $eigvec(n=>j,p=>index);
-					$cplx_vec(r=>1,n=>j,p=>index) = - $eigvec(n=>j,p=>index);
-				 }
-			 	 i = index;
-			 }
-		  }	  
-	  }
-	  else{
-		  for(i = 0; i < $SIZE(n);i++)
-		  {
-			 if ($eigimval(n=>i) == 0)
-			 {
-				 $cplx_val(q=>0,n=>i) = $eigreval(n=>i);
-	 			 $cplx_val(q=>1,n=>i) = $eigimval(n=>i);
-				 for (j = 0; j < $SIZE(p); j++)
-				 {
-					$cplx_vec(r=>0,n=>i,p=>j) = $eigvec(n=>i,p=>j);
-					$cplx_vec(r=>1,n=>i,p=>j) = 0;
-				 }
-			 }
-			 else
-			 {
-				 index = i+1;
-				 $cplx_val(q=>0,n=>i) = $eigreval(n=>i);
-	 			 $cplx_val(q=>1,n=>i) = $eigimval(n=>i);
-				 $cplx_val(q=>0,n=>index) = $eigreval(n=>index);
-	 			 $cplx_val(q=>1,n=>index) = $eigimval(n=>index);
-				 for (j = 0; j < $SIZE(p); j++)
-				 {
-					$cplx_vec(r=>0,n=>i,p=>j) = $cplx_vec(r=>0,n=>index,p=>j) = $eigvec(n=>i,p=>j);
-					$cplx_vec(r=>1,n=>i,p=>j) = $eigvec(n=>index,p=>j);
-					$cplx_vec(r=>1,n=>index,p=>j) = - $eigvec(n=>index,p=>j);
-				 }
-			 	 i = index;
-			 }
-		  }
-	  }
 
-	',
-	Doc => <<EOT
+
+*tricpy = \&PDL::tricpy;
+
+
+
+
+
+=head2 cplx_eigen
+
+=for sig
+
+  Signature: (eigreval(n);eigimval(n); eigvec(n,p);int fortran();[o]cplx_val(q=2,n);[o]cplx_vec(r=2,n,p))
+
 =for ref
 
 Output complex eigen-values/vectors from eigen-values/vectors
 as computed by geev or geevx.
 'fortran' means fortran storage type.
 
+
+
+=for bad
+
+cplx_eigen does not process bad values.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
 =cut
 
-EOT
-
-);
 
 
-pp_def(
-	'augment',
-	DefaultFlow => 1,
-	Reversible => 1,
-	Pars => 'x(n); y(p);[o]out(q)',
-	RedoDimsCode => '$SIZE(q) = ( $PDL(x)->ndims > 0 ? $PDL(x)->dims[0] : 1) + ( $PDL(y)->ndims > 0 ? $PDL(y)->dims[0] : 1);',
-	Code => '
-	  register PDL_Long i,j;
 
-	  for (i=0; i < $SIZE(n); i++){
-	  	$out(q=>i) = $x(n=>i);
-  	  }
-	  j = 0;
-	  for (i=$SIZE(n); i < $SIZE(q); i++){
-	  	$out(q=>i) = $y(p=>j);
-	  	j++;
-  	  }
-	',
-       BackCode => '
-	  register PDL_Long i,j;
 
-	  for (i=0; i < $SIZE(n); i++){
-	  	$x(n=>i) = $out(q=>i);
-  	  }
-	  j = 0;
-	  for (i=$SIZE(n); i < $SIZE(q); i++){
-	  	$y(p=>j) = $out(q=>i);
-	  	j++;
-  	  }
-       
-       ',
-	Doc => <<EOT
+
+*cplx_eigen = \&PDL::cplx_eigen;
+
+
+
+
+
+=head2 augment
+
+=for sig
+
+  Signature: (x(n); y(p);[o]out(q))
+
 =for ref
 
 Combine two pidlles into a single piddle.
 This routine does backward and forward dataflow automatically.
 
+
+
+=for bad
+
+augment does not process bad values.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
 =cut
 
-EOT
 
-);
 
-pp_def(
-	'mstack',
-	DefaultFlow => 1,
-	Reversible => 1,
-	Pars => 'x(n,m);y(n,p);[o]out(n,q);',
-	RedoDimsCode => '$SIZE(q) = $PDL(x)->dims[1] + $PDL(y)->dims[1];',
-	Code => '
-	  register PDL_Long i,j;
-	  loop(m)%{
-		  loop(n)%{
-			$out(n=>n,q=>m) = $x();
-		  %}
-	  %}
-	  j=0;
-	  for (i = $SIZE(m); i < $SIZE(q) ;i++,j++)
-	  {
-		  loop(n)%{
-			$out(n=>n,q=>i) = $y(n=>n,p=>j);
-		  %}
-	  }	
-	',
 
-       BackCode => '
-	  register PDL_Long i,j;
-	  loop(m)%{
-		  loop(n)%{
-			$x() = $out(n=>n,q=>m);
-		  %}
-	  %}
-	  j=0;
-	  for (i = $SIZE(m); i < $SIZE(q) ;i++,j++)
-	  {
-		  loop(n)%{
-			$y(n=>n,p=>j) = $out(n=>n,q=>i);
-		  %}
-	  }
-       ',
 
-	Doc => <<EOT
+
+*augment = \&PDL::augment;
+
+
+
+
+
+=head2 mstack
+
+=for sig
+
+  Signature: (x(n,m);y(n,p);[o]out(n,q))
+
 =for ref
 
 Combine two pidlles into a single piddle.
 This routine does backward and forward dataflow automatically.
 
+
+
+=for bad
+
+mstack does not process bad values.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
 =cut
 
-EOT
-
-);
-#	RedoDimsCode => '$SIZE(q) = $PDL(x)->dims[1] + $PDL(y)->dims[1];',
 
 
-pp_addhdr('
-float ftrace(int n, float *mat)
-{
-  int i;
-  float sum = mat[0];
-  for (i = 1; i < n; i++)
-   	sum += mat[i*(n+1)];
-  return sum;
-}
-double dtrace(int n, double *mat)
-{
-  int i;
-  double sum = mat[0];
-  for (i = 1; i < n; i++)
-   	sum += mat[i*(n+1)];
-  return sum;
-}
-');
-pp_def(
-	'charpol',
-	RedoDimsCode => '$SIZE(p) = $PDL(A)->dims[0] + 1;',
-	Pars => '[phys]A(n,n);[phys,o]Y(n,n);[phys,o]out(p);',
-	GenericTypes => [F,D],
-	Code => '
-	int i,j,k;
-	$GENERIC() *p, b;
-	//$GENERIC() *tmp;
-	char ptrans = \'N\';	
-		types(F) %{
-			extern int sgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, float *alpha, float *a, integer *lda,
-			float *b, integer *ldb, float *beta, float *c__,
-			integer *ldc);
-			float alpha = 1;
-			float beta = 0;
-		%}
-		types(D) %{
-			extern int dgemm_(char *transa, char *transb, integer *m, integer *
-			n, integer *k, double *alpha, double *a, integer *lda,
-			double *b, integer *ldb, double *beta, double *c__,
-			integer *ldc);
-			double alpha = 1;
-			double beta = 0;
-		%}
 
-	p = ($GENERIC() * ) malloc ( $SIZE(n) * $SIZE(n) * sizeof($GENERIC()));
-	loop(n0)%{
-		loop(n1)%{
-			$Y(n0=>n0,n1=>n1) = (n0 == n1) ?  ($GENERIC()) 1.0 : ($GENERIC()) 0.0;
-		%}	
-	%}
-	$out(p=>0) = 1;
 
-	i = 0;
-	for (;;)
-	{
-		i++;
-		$TFD(sgemm_,dgemm_)(&ptrans,&ptrans,&(integer){$PRIV(__n_size)},&(integer){$PRIV(__n_size)},
-			&(integer){$PRIV(__n_size)},&alpha,$P(A),&(integer){$PRIV(__n_size)},	$P(Y), &(integer){$PRIV(__n_size)},
-			&beta, p, &(integer){$PRIV(__n_size)});
-		
-		if (i == $SIZE(n)) break;
 
-		//tmp = $P(Y);
-		//$P(Y) = p;
-		//p = tmp;
-		memmove($P(Y), p, $SIZE(n) * $SIZE(n) * sizeof($GENERIC()));
-//		loop(n1)
-//		%{
-//			loop(n0)
-//			%{
-//				$Y(n0=>n0,n1=>n1) = p[(n1*$SIZE(n))+n0];
-//			%}	
-//		%}
-		
-		b = $out(p=>i) = - $TFD(ftrace,dtrace)($SIZE(n), $P(Y)) / i;
-		for (j = 0; j < $SIZE(n); j++) 
-			$Y(n0=>j,n1=>j) +=  b;
+*mstack = \&PDL::mstack;
 
-	}
 
-	k = $SIZE(n);
-	$out(p=>k) = - $TFD(ftrace,dtrace)(k, p) / k;
-	if ((k+1) & 1)
-	{
-		loop(n0)
-		%{
-			loop(n1)
-			%{
-				$Y(n0=>n0,n1=>n1) = -$Y(n0=>n0,n1=>n1);
-			%}	
-		%}
-	}
-	free(p);
 
-	',
-	Doc => <<EOT
+
+
+=head2 charpol
+
+=for sig
+
+  Signature: ([phys]A(n,n);[phys,o]Y(n,n);[phys,o]out(p))
+
 =for ref
 
 Compute adjoint matrix and characteristic polynomial.
 
+
+
+=for bad
+
+charpol does not process bad values.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
 =cut
 
-EOT
 
-);
 
-pp_addpm({At=>'Bot'},<<'EOD');
+
+
+
+*charpol = \&PDL::charpol;
+
+
+
+;
+
 
 =head1 AUTHOR
 
@@ -12366,7 +8716,12 @@ file.
 
 =cut
 
-EOD
 
-pp_done();  # you will need this to finish pp processing
 
+
+
+# Exit with OK status
+
+1;
+
+		   
