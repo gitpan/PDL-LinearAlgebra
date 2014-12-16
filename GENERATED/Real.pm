@@ -13,7 +13,7 @@ use DynaLoader;
 
 
 
-   $PDL::LinearAlgebra::Real::VERSION = '0.08_02';
+   $PDL::LinearAlgebra::Real::VERSION = '0.08_03';
    @ISA    = ( 'PDL::Exporter','DynaLoader' );
    push @PDL::Core::PP, __PACKAGE__;
    bootstrap PDL::LinearAlgebra::Real $VERSION;
